@@ -1,0 +1,6 @@
+[submodule "Software/lib/arduino-audio-tools"]
+	path = Software/lib/arduino-audio-tools
+	url = https://github.com/pschatzmann/arduino-audio-tools
+[submodule "Software/lib/ESP32-A2DP"]
+	path = Software/lib/ESP32-A2DP
+	url = https://github.com/pschatzmann/ESP32-A2DP
