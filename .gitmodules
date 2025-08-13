@@ -4,3 +4,6 @@
 [submodule "Software/lib/ESP32-A2DP"]
 	path = Software/lib/ESP32-A2DP
 	url = https://github.com/pschatzmann/ESP32-A2DP
+[submodule "Software/lib/arduino-libhelix"]
+	path = Software/lib/arduino-libhelix
+	url = https://github.com/pschatzmann/arduino-libhelix/
