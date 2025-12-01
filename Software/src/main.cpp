@@ -33,10 +33,13 @@ void setup() {
     
     Serial.println("ESP32 Bluetooth MP3 Player Starting...");
     
+    // Initialize SPI
+    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+    SPI.setFrequency(10e6);
+    SPI.setDataMode(SPI_MODE0);
+    
     // Initialize SD card
     Serial.println("Initializing SD card...");
-    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-    SPI.setDataMode(SPI_MODE0);
     if (!SD.begin(SD_CS_PIN)) {
         Serial.println("SD card initialization failed!");
         return;
