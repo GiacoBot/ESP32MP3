@@ -46,6 +46,7 @@ void setup() {
     // Initialize Display
     display_manager.initialize();
     display_manager.setMusicPlayer(&music_player);
+    display_manager.setBluetoothManager(&bluetooth_manager);
     
     // Build playlist
     if (!playlist_manager.scanForMP3Files()) {
