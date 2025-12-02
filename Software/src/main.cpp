@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <SD.h>
 
+#include "settings.h"
 #include "MusicPlayer.h"
 #include "PlaylistManager.h" 
 #include "BluetoothManager.h"
@@ -9,14 +10,6 @@
 #include "AudioProcessor.h"
 #include "InputManager.h"
 #include "DisplayManager.h"
-
-// --- Configuration ---
-const char* TARGET_DEVICE_NAME = "Lenovo LP40";
-const int SD_CS_PIN = 22;
-const int SPI_MOSI = 33;
-const int SPI_MISO = 26;
-const int SPI_SCK = 25;
-const char* MUSIC_ROOT = "/";
 
 // --- Global Objects ---
 MusicPlayer music_player;
@@ -28,7 +21,7 @@ InputManager input_manager;
 DisplayManager display_manager;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
     while (!Serial) {}
     
     Serial.println("ESP32 Bluetooth MP3 Player Starting...");
@@ -37,6 +30,11 @@ void setup() {
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
     SPI.setFrequency(10e6);
     SPI.setDataMode(SPI_MODE0);
+
+    // Initialize Display
+    display_manager.initialize();
+    display_manager.setMusicPlayer(&music_player);
+    display_manager.setBluetoothManager(&bluetooth_manager);
     
     // Initialize SD card
     Serial.println("Initializing SD card...");
@@ -45,11 +43,6 @@ void setup() {
         return;
     }
     Serial.println("SD card initialized successfully");
-
-    // Initialize Display
-    display_manager.initialize();
-    display_manager.setMusicPlayer(&music_player);
-    display_manager.setBluetoothManager(&bluetooth_manager);
     
     // Build playlist
     if (!playlist_manager.scanForMP3Files()) {

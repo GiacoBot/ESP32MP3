@@ -1,12 +1,6 @@
 #include "DisplayManager.h"
+#include "settings.h"
 #include <SPI.h>
-
-// --- Pin Definitions ---
-const int OLED_DC = 27;
-const int OLED_RESET = 14;
-const int OLED_CS = 12;
-const int SCREEN_WIDTH = 128;
-const int SCREEN_HEIGHT = 64;
 
 DisplayManager::DisplayManager() : 
     display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, OLED_DC, OLED_RESET, OLED_CS),

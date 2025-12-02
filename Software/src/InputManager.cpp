@@ -1,11 +1,5 @@
 #include "InputManager.h"
-
-// --- Pin Definitions ---
-const int BTN_UP = 13;
-const int BTN_DOWN = 17;
-const int BTN_LEFT = 4;
-const int BTN_RIGHT = 15;
-const int BTN_ENTER = 2;
+#include "settings.h"
 
 // --- Static member initialization ---
 volatile bool InputManager::btn_up_pressed = false;
@@ -62,7 +56,6 @@ void IRAM_ATTR InputManager::isr_btn_enter() {
 
 void InputManager::handleInputs() {
     static unsigned long last_press_time = 0;
-    const unsigned long debounce_delay = 300; // 300ms debounce delay
 
     // Use a local copy of flags to avoid race conditions with ISRs
     bool up = btn_up_pressed;
@@ -73,7 +66,7 @@ void InputManager::handleInputs() {
     
     if (up || down || left || right || enter) {
         unsigned long current_time = millis();
-        if (current_time - last_press_time > debounce_delay) {
+        if (current_time - last_press_time > DEBOUNCE_DELAY) {
             last_press_time = current_time;
             
             btn_up_pressed = false;
