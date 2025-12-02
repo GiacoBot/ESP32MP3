@@ -27,8 +27,22 @@ bool DisplayManager::initialize() {
     } else {
         Serial.println("SSD1306 initialized successfully");
         is_initialized = true;
+
         display.clearDisplay();
         display.setRotation(2); // rotate the screen 180 degree
+
+        // Show splash screen if enabled
+        #if defined(SHOW_SPLASH_SCREEN) && SHOW_SPLASH_SCREEN
+            // Center the bitmap
+            const int16_t x = (SCREEN_WIDTH - LOGO_WIDTH) / 2;
+            const int16_t y = (SCREEN_HEIGHT - LOGO_HEIGHT) / 2;
+            display.drawBitmap(x, y, splash_screen_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+            display.display();
+            delay(SPLASH_SCREEN_DURATION);
+        #endif
+
+        // Clear display after splash screen, ready for main UI
+        display.clearDisplay();
         display.display();
     }
     return is_initialized;
