@@ -1,107 +1,49 @@
 #include "InputManager.h"
-#include "settings.h"
 
-// --- Static member initialization ---
-volatile bool InputManager::btn_up_pressed = false;
-volatile bool InputManager::btn_down_pressed = false;
-volatile bool InputManager::btn_left_pressed = false;
-volatile bool InputManager::btn_right_pressed = false;
-volatile bool InputManager::btn_enter_pressed = false;
-
-InputManager::InputManager() : music_player(nullptr), bluetooth_manager(nullptr) {}
-
-void InputManager::setMusicPlayer(MusicPlayer* player) {
-    music_player = player;
-}
-
-void InputManager::setBluetoothManager(BluetoothManager* btManager) {
-    bluetooth_manager = btManager;
+InputManager::InputManager() {
+    // Initialize button states
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        last_button_state[i] = HIGH; // Buttons are pulled up, so HIGH is the idle state
+        button_state[i] = HIGH;
+        last_debounce_time[i] = 0;
+    }
 }
 
 void InputManager::initialize() {
-    Serial.println("Setting up button interrupts...");
-    pinMode(BTN_UP, INPUT_PULLUP);
-    pinMode(BTN_DOWN, INPUT_PULLUP);
-    pinMode(BTN_LEFT, INPUT_PULLUP);
-    pinMode(BTN_RIGHT, INPUT_PULLUP);
-    pinMode(BTN_ENTER, INPUT_PULLUP);
-
-    attachInterrupt(digitalPinToInterrupt(BTN_UP), isr_btn_up, FALLING);
-    attachInterrupt(digitalPinToInterrupt(BTN_DOWN), isr_btn_down, FALLING);
-    attachInterrupt(digitalPinToInterrupt(BTN_LEFT), isr_btn_left, FALLING);
-    attachInterrupt(digitalPinToInterrupt(BTN_RIGHT), isr_btn_right, FALLING);
-    attachInterrupt(digitalPinToInterrupt(BTN_ENTER), isr_btn_enter, FALLING);
+    Serial.println("Setting up button pins for polling...");
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        pinMode(button_pins[i], INPUT_PULLUP);
+    }
 }
 
-// --- ISRs (Interrupt Service Routines) ---
-void IRAM_ATTR InputManager::isr_btn_up() {
-    btn_up_pressed = true;
-}
+InputEvent InputManager::handleInputs() {
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        // Read the state of the button
+        int reading = digitalRead(button_pins[i]);
 
-void IRAM_ATTR InputManager::isr_btn_down() {
-    btn_down_pressed = true;
-}
+        // Check if the state has changed (e.g., due to a press or noise)
+        if (reading != last_button_state[i]) {
+            // Reset the debounce timer
+            last_debounce_time[i] = millis();
+        }
 
-void IRAM_ATTR InputManager::isr_btn_left() {
-    btn_left_pressed = true;
-}
+        // Check if the state has been stable for longer than the debounce delay
+        if ((millis() - last_debounce_time[i]) > DEBOUNCE_DELAY) {
+            // If the stable state is different from the last registered state, it's a valid change
+            if (reading != button_state[i]) {
+                button_state[i] = reading;
 
-void IRAM_ATTR InputManager::isr_btn_right() {
-    btn_right_pressed = true;
-}
-
-void IRAM_ATTR InputManager::isr_btn_enter() {
-    btn_enter_pressed = true;
-}
-
-void InputManager::handleInputs() {
-    static unsigned long last_press_time = 0;
-
-    // Use a local copy of flags to avoid race conditions with ISRs
-    bool up = btn_up_pressed;
-    bool down = btn_down_pressed;
-    bool left = btn_left_pressed;
-    bool right = btn_right_pressed;
-    bool enter = btn_enter_pressed;
-    
-    if (up || down || left || right || enter) {
-        unsigned long current_time = millis();
-        if (current_time - last_press_time > DEBOUNCE_DELAY) {
-            last_press_time = current_time;
-            
-            btn_up_pressed = false;
-            btn_down_pressed = false;
-            btn_left_pressed = false;
-            btn_right_pressed = false;
-            btn_enter_pressed = false;
-
-            if (up) {
-                Serial.println("Button UP: Connecting...");
-                if (bluetooth_manager) bluetooth_manager->connect();
-            } else if (down) {
-                Serial.println("Button DOWN: Disconnecting...");
-                if (bluetooth_manager) bluetooth_manager->disconnect();
-            } else if (left) {
-                Serial.println("Button LEFT: Previous track...");
-                if (music_player) music_player->executeCommand(PlayerCommand::PREV_TRACK);
-            } else if (right) {
-                Serial.println("Button RIGHT: Next track...");
-                if (music_player) music_player->executeCommand(PlayerCommand::NEXT_TRACK);
-            } else if (enter) {
-                Serial.println("Button ENTER: Play/Pause...");
-                if (music_player && music_player->getState() == PlayerState::PLAYING) {
-                    music_player->executeCommand(PlayerCommand::PAUSE);
-                } else if (music_player) {
-                    music_player->executeCommand(PlayerCommand::PLAY);
+                // If the new stable state is LOW, it means the button was just pressed
+                if (button_state[i] == LOW) {
+                    Serial.printf("Input Event: %d\n", i);
+                    return button_events[i];
                 }
             }
-        } else {
-            // It's a bounce, clear the flags
-            btn_up_pressed = false;
-            btn_down_pressed = false;
-            btn_left_pressed = false;
-            btn_right_pressed = false;
-            btn_enter_pressed = false;
         }
+        
+        last_button_state[i] = reading;
     }
+    
+    // If no button press was detected, return NONE
+    return InputEvent::INPUT_EVENT_NONE;
 }

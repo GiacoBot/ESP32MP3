@@ -94,7 +94,7 @@ const unsigned char splash_screen_logo[] PROGMEM = {
 #define BTN_LEFT  4
 #define BTN_RIGHT 15
 #define BTN_ENTER 2
-#define DEBOUNCE_DELAY 300 // in milliseconds
+#define DEBOUNCE_DELAY 50 // in milliseconds
 
 #endif // DEV_BOARD_REV_1_0
 

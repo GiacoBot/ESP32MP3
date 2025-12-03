@@ -49,19 +49,23 @@ void SerialController::handleInput() {
 void SerialController::executeCommand(char cmd) {
     switch (cmd) {
         case 'c':
-            if (bluetooth_manager) {
-                bluetooth_manager->connect();
-            } else {
-                Serial.println("Error: BluetoothManager not available");
-            }
+            // This command is now obsolete and handled by the UI menu.
+            // if (bluetooth_manager) {
+            //     bluetooth_manager->connect();
+            // } else {
+            //     Serial.println("Error: BluetoothManager not available");
+            // }
+            Serial.println("Info: BT connect is now handled via the display menu.");
             break;
             
         case 'd':
-            if (bluetooth_manager) {
-                bluetooth_manager->disconnect();
-            } else {
-                Serial.println("Error: BluetoothManager not available");
-            }
+            // This command is now obsolete and handled by the UI menu.
+            // if (bluetooth_manager) {
+            //     bluetooth_manager->disconnect();
+            // } else {
+            //     Serial.println("Error: BluetoothManager not available");
+            // }
+            Serial.println("Info: BT disconnect is now handled via the display menu.");
             break;
             
         case 'p':
