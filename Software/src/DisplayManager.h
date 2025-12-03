@@ -1,10 +1,10 @@
 #ifndef DISPLAY_MANAGER_H
 #define DISPLAY_MANAGER_H
 
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <U8g2lib.h>
 #include "MusicPlayer.h"
 #include "BluetoothManager.h"
+#include "settings.h"
 
 class DisplayManager {
 public:
@@ -17,7 +17,7 @@ public:
 private:
     MusicPlayer* music_player;
     BluetoothManager* bluetooth_manager;
-    Adafruit_SSD1306 display;
+    U8G2_DISPLAY_TYPE u8g2;
     bool is_initialized;
 
     // To track changes
@@ -25,5 +25,6 @@ private:
     bool last_bt_status;
     PlayerState last_player_state;
 };
+
 
 #endif // DISPLAY_MANAGER_H
