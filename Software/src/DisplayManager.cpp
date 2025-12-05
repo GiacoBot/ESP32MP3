@@ -11,6 +11,8 @@ DisplayManager::DisplayManager() :
     bt_menu_scroll_offset(0),
     playlist_menu_selected_index(0),
     playlist_menu_scroll_offset(0),
+    prev_bt_menu_selected_index(0),
+    prev_playlist_menu_selected_index(0),
     last_displayed_track(""),
     last_bt_status(false),
     last_player_state(PlayerState::STOPPED)
@@ -51,13 +53,17 @@ void DisplayManager::setPlaylistManager(PlaylistManager* plManager) {
 
 // --- Setters for UI State ---
 void DisplayManager::setBluetoothMenuState(int selected_index, int scroll_offset) {
+    // Store the previous index before updating
+    prev_bt_menu_selected_index = bt_menu_selected_index;
     bt_menu_selected_index = selected_index;
-    bt_menu_scroll_offset = scroll_offset;
+    // The incoming scroll_offset is ignored, as we will calculate it internally.
 }
 
 void DisplayManager::setPlaylistMenuState(int selected_index, int scroll_offset) {
+    // Store the previous index before updating
+    prev_playlist_menu_selected_index = playlist_menu_selected_index;
     playlist_menu_selected_index = selected_index;
-    playlist_menu_scroll_offset = scroll_offset;
+    // The incoming scroll_offset is ignored, as we will calculate it internally.
 }
 
 // --- Core Update Method ---
@@ -95,13 +101,43 @@ void DisplayManager::drawBluetoothMenu() {
     } else if (devices.empty()) {
         u8g2.drawStr(0, 32, "No devices found.");
     } else {
+        const int max_items_on_screen = 4;
+        const int list_size = devices.size();
+
+        // --- New, Robust Scrolling Logic ---
+        int direction = bt_menu_selected_index - prev_bt_menu_selected_index;
+
+        if (direction > 0) { // Moving Down
+            // If selection is now off the bottom of the screen, scroll down
+            if (bt_menu_selected_index >= bt_menu_scroll_offset + max_items_on_screen) {
+                bt_menu_scroll_offset = bt_menu_selected_index - max_items_on_screen + 1;
+            }
+        } else if (direction < 0) { // Moving Up
+            // If selection is now off the top of the screen, scroll up
+            if (bt_menu_selected_index < bt_menu_scroll_offset) {
+                bt_menu_scroll_offset = bt_menu_selected_index;
+            }
+        }
+        
+        // Ensure scroll_offset is always within valid bounds
+        if (list_size > 0) {
+             bt_menu_scroll_offset = constrain(bt_menu_scroll_offset, 0, max(0, list_size - max_items_on_screen));
+        } else {
+            bt_menu_scroll_offset = 0;
+        }
+
         int y = 26; // Starting Y for the list
         const int line_height = 11;
         
-        for (size_t i = 0; i < devices.size() && i < 4; ++i) {
-            String device_name = devices[i].name;
+        for (int i = 0; i < max_items_on_screen; ++i) {
+            int item_index = bt_menu_scroll_offset + i;
+            if (item_index >= list_size) {
+                break;
+            }
             
-            if (i == bt_menu_selected_index) {
+            String device_name = devices[item_index].name;
+            
+            if (item_index == bt_menu_selected_index) {
                 // Highlight the selected item
                 u8g2.drawBox(0, y - line_height + 2, SCREEN_WIDTH, line_height);
                 u8g2.setDrawColor(0); // Black text on white box
@@ -124,13 +160,41 @@ void DisplayManager::drawPlaylistMenu() {
     if (tracks.empty()) {
         u8g2.drawStr(0, 32, "No tracks on SD card.");
     } else {
+        const int max_items_on_screen = 4;
+        const int list_size = tracks.size();
+
+        // --- New, Robust Scrolling Logic ---
+        int direction = playlist_menu_selected_index - prev_playlist_menu_selected_index;
+
+        if (direction > 0) { // Moving Down
+            if (playlist_menu_selected_index >= playlist_menu_scroll_offset + max_items_on_screen) {
+                playlist_menu_scroll_offset = playlist_menu_selected_index - max_items_on_screen + 1;
+            }
+        } else if (direction < 0) { // Moving Up
+            if (playlist_menu_selected_index < playlist_menu_scroll_offset) {
+                playlist_menu_scroll_offset = playlist_menu_selected_index;
+            }
+        }
+        
+        // Ensure scroll_offset is always within valid bounds
+        if (list_size > 0) {
+            playlist_menu_scroll_offset = constrain(playlist_menu_scroll_offset, 0, max(0, list_size - max_items_on_screen));
+        } else {
+            playlist_menu_scroll_offset = 0;
+        }
+
         int y = 26; // Starting Y for the list
         const int line_height = 11;
 
-        for (size_t i = 0; i < tracks.size() && i < 4; ++i) {
-            String track_name = playlist_manager->getTrackName(i);
+        for (int i = 0; i < max_items_on_screen; ++i) {
+            int item_index = playlist_menu_scroll_offset + i;
+            if (item_index >= list_size) {
+                break;
+            }
+
+            String track_name = playlist_manager->getTrackName(item_index);
             
-            if (i == playlist_menu_selected_index) {
+            if (item_index == playlist_menu_selected_index) {
                 u8g2.drawBox(0, y - line_height + 2, SCREEN_WIDTH, line_height);
                 u8g2.setDrawColor(0);
                 u8g2.drawStr(2, y, track_name.c_str());

@@ -43,6 +43,10 @@ private:
     int playlist_menu_selected_index;
     int playlist_menu_scroll_offset;
 
+    // Internal state for tracking scroll direction
+    int prev_bt_menu_selected_index;
+    int prev_playlist_menu_selected_index;
+
     // --- Drawing Methods ---
     void drawBluetoothMenu();
     void drawPlaylistMenu();
