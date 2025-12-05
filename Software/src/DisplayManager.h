@@ -47,6 +47,14 @@ private:
     int prev_bt_menu_selected_index;
     int prev_playlist_menu_selected_index;
 
+    // Internal state for horizontal text scrolling
+    unsigned long bt_last_selection_time;
+    unsigned long bt_last_scroll_time;
+    int bt_text_scroll_offset_pixels;
+    unsigned long playlist_last_selection_time;
+    unsigned long playlist_last_scroll_time;
+    int playlist_text_scroll_offset_pixels;
+
     // --- Drawing Methods ---
     void drawBluetoothMenu();
     void drawPlaylistMenu();

@@ -20,6 +20,10 @@
 #define SHOW_SPLASH_SCREEN true // Set to false to disable splash screen
 #define SPLASH_SCREEN_DURATION 1500 // Milliseconds to display splash screen
 
+// --- Menu Settings ---
+#define MENU_SCROLL_DELAY 500 // Milliseconds to wait before starting to scroll long text
+#define MENU_SCROLL_SPEED 75 // Milliseconds per pixel shift for scrolling text
+
 // -- Splash Screen Logo (56x56px)
 #define LOGO_WIDTH 56
 #define LOGO_HEIGHT 56
