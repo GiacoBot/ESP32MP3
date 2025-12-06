@@ -79,7 +79,19 @@ void loop() {
     switch (current_screen) {
         case AppScreen::SCREEN_BLUETOOTH_SELECTION: {
             // --- Logic for this screen depends on connection state ---
-            if (bluetooth_manager.isConnected()) {
+            if (bluetooth_manager.isConnecting()) {
+                // --- CONNECTING STATE ---
+                // While connecting, the screen is non-interactive. Only allow screen switching.
+                switch (event) {
+                    case InputEvent::INPUT_EVENT_RIGHT:
+                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        break;
+                    case InputEvent::INPUT_EVENT_LEFT:
+                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        break;
+                    default: break;
+                }
+            } else if (bluetooth_manager.isConnected()) {
                 // --- CONNECTED STATE ---
                 // In this state, there's only one option: Disconnect.
                 bt_menu_selected = 0; // Always select the "Disconnect" button
@@ -89,7 +101,7 @@ void loop() {
                         bluetooth_manager.disconnect();
                         // After disconnecting, discovery will start automatically (handled in BluetoothManager)
                         break;
-                    // In connected state, other navigation buttons do nothing
+                    // In connected state, other navigation buttons do nothing for this screen
                     case InputEvent::INPUT_EVENT_RIGHT:
                         current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                         break;
@@ -127,7 +139,7 @@ void loop() {
                         if (device_count > 0 && bt_menu_selected < device_count) {
                             const auto& devices = bluetooth_manager.getDiscoveredDevices();
                             bluetooth_manager.connect(devices[bt_menu_selected]);
-                            // Don't switch screen immediately, wait for connection confirmation
+                            // Screen will change to "Connecting..." automatically on next display update
                         }
                         break;
                     default: break;

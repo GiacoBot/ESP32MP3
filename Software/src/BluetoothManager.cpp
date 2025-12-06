@@ -15,9 +15,9 @@ extern AudioProcessor audio_processor;
 BluetoothManager::BluetoothManager() :
     music_player(nullptr),
     connected(false),
-    discovering(false) {
+    discovering(false),
+    connecting(false) {
     instance = this; // For static callbacks
-    // Clear device info initially
     memset(&connected_device, 0, sizeof(BluetoothDevice));
     memset(&connecting_device, 0, sizeof(BluetoothDevice));
 }
@@ -45,7 +45,8 @@ bool BluetoothManager::initialize(const String& local_name) {
 }
 
 void BluetoothManager::startDiscovery() {
-    if (connected || discovering) {
+    // Do not start a new discovery if already connected, connecting, or discovering
+    if (connected || connecting || discovering) {
         return;
     }
     Serial.println("Starting Bluetooth device discovery...");
@@ -76,7 +77,7 @@ bool BluetoothManager::connect(const BluetoothDevice& device) {
     if (discovering) {
         stopDiscovery();
     }
-    // Store the device we are attempting to connect to
+    this->connecting = true;
     this->connecting_device = device;
     a2dp_source.connect(const_cast<uint8_t*>(device.address));
     return true;
@@ -93,8 +94,16 @@ bool BluetoothManager::isConnected() const {
     return connected;
 }
 
+bool BluetoothManager::isConnecting() const {
+    return connecting;
+}
+
 String BluetoothManager::getConnectedDeviceName() const {
     return connected_device.name;
+}
+
+String BluetoothManager::getConnectingDeviceName() const {
+    return connecting_device.name;
 }
 
 // --- Library Callback Implementations ---
@@ -138,31 +147,33 @@ void BluetoothManager::connectionStateCallback(esp_a2d_connection_state_t state,
         case ESP_A2D_CONNECTION_STATE_DISCONNECTED:
             Serial.println("DISCONNECTED");
             instance->connected = false;
+            instance->connecting = false;
             memset(&instance->connected_device, 0, sizeof(BluetoothDevice));
             if (instance->music_player) instance->music_player->notifyConnectionStateChanged(false);
             instance->startDiscovery();
             break;
         case ESP_A2D_CONNECTION_STATE_CONNECTING:
             Serial.println("CONNECTING");
+            instance->connecting = true;
             instance->connected = false;
             break;
         case ESP_A2D_CONNECTION_STATE_CONNECTED:
             Serial.println("CONNECTED");
             instance->connected = true;
-            // The connected device is the one we last tried to connect to.
+            instance->connecting = false;
             instance->connected_device = instance->connecting_device;
             Serial.printf("Stored connected device: %s\n", instance->connected_device.name.c_str());
             if (instance->music_player) instance->music_player->notifyConnectionStateChanged(true);
             break;
         case ESP_A2D_CONNECTION_STATE_DISCONNECTING:
             Serial.println("DISCONNECTING");
+            instance->connecting = true; // Treat disconnecting as a form of "connecting" state for UI feedback
             instance->connected = false;
             break;
     }
 }
 
 // --- Unchanged Callbacks ---
-// (Audio and AVRC callbacks remain the same)
 int32_t BluetoothManager::audioDataCallback(uint8_t* data, int32_t len) {
     if (!data || len <= 0) return 0;
     if (!instance || !instance->music_player) {

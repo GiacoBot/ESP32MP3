@@ -113,8 +113,20 @@ void DisplayManager::drawBluetoothMenu() {
 
     u8g2.drawStr(0, 12, "Bluetooth Devices");
 
-    // --- Mode 1: A device is currently connected ---
-    if (bluetooth_manager->isConnected()) {
+    // --- Mode 1: A device is being connected to ---
+    if (bluetooth_manager->isConnecting()) {
+        String line1 = "Connecting to:";
+        String line2 = bluetooth_manager->getConnectingDeviceName();
+
+        // Center and draw text
+        u8g2_uint_t w1 = u8g2.getStrWidth(line1.c_str());
+        u8g2.drawStr((SCREEN_WIDTH - w1) / 2, 30, line1.c_str());
+        
+        u8g2_uint_t w2 = u8g2.getStrWidth(line2.c_str());
+        u8g2.drawStr((SCREEN_WIDTH - w2) / 2, 42, line2.c_str());
+    }
+    // --- Mode 2: A device is currently connected ---
+    else if (bluetooth_manager->isConnected()) {
         String line1 = "Connected to:";
         String line2 = bluetooth_manager->getConnectedDeviceName();
         String button = "[ Disconnect ]";
@@ -135,7 +147,7 @@ void DisplayManager::drawBluetoothMenu() {
         u8g2.drawStr((SCREEN_WIDTH - w3) / 2, button_y, button.c_str());
         u8g2.setDrawColor(1); // Reset color
     } 
-    // --- Mode 2: Not connected, show device list ---
+    // --- Mode 3: Not connected, show device list ---
     else {
         
         const auto& devices = bluetooth_manager->getDiscoveredDevices();
