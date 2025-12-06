@@ -1,11 +1,14 @@
 #include "InputManager.h"
 
 InputManager::InputManager() {
-    // Initialize button states
+    // Initialize all state-tracking arrays
     for (int i = 0; i < NUM_BUTTONS; i++) {
         last_button_state[i] = HIGH; // Buttons are pulled up, so HIGH is the idle state
         button_state[i] = HIGH;
         last_debounce_time[i] = 0;
+        press_start_time[i] = 0;
+        last_repeat_time[i] = 0;
+        is_long_press_registered[i] = false;
     }
 }
 
@@ -17,33 +20,52 @@ void InputManager::initialize() {
 }
 
 InputEvent InputManager::handleInputs() {
+    unsigned long current_millis = millis();
+
     for (int i = 0; i < NUM_BUTTONS; i++) {
-        // Read the state of the button
+        // --- Debouncing Logic ---
         int reading = digitalRead(button_pins[i]);
-
-        // Check if the state has changed (e.g., due to a press or noise)
         if (reading != last_button_state[i]) {
-            // Reset the debounce timer
-            last_debounce_time[i] = millis();
+            last_debounce_time[i] = current_millis;
         }
+        last_button_state[i] = reading;
 
-        // Check if the state has been stable for longer than the debounce delay
-        if ((millis() - last_debounce_time[i]) > DEBOUNCE_DELAY) {
-            // If the stable state is different from the last registered state, it's a valid change
+        if ((current_millis - last_debounce_time[i]) > DEBOUNCE_DELAY) {
+            // The reading has been stable, proceed if it's different from the current state
             if (reading != button_state[i]) {
                 button_state[i] = reading;
 
-                // If the new stable state is LOW, it means the button was just pressed
+                // --- Event Logic ---
                 if (button_state[i] == LOW) {
-                    Serial.printf("Input Event: %d\n", i);
-                    return button_events[i];
+                    // --- BUTTON PRESSED ---
+                    press_start_time[i] = current_millis;
+                    is_long_press_registered[i] = false;
+                } else {
+                    // --- BUTTON RELEASED ---
+                    if (!is_long_press_registered[i]) {
+                        // If a long press was never registered, it's a short press
+                        return short_press_events[i];
+                    }
                 }
             }
         }
-        
-        last_button_state[i] = reading;
+
+        // --- Long Press and Repeat Logic (while button is held down) ---
+        if (button_state[i] == LOW) {
+            // Check for initial long press
+            if (!is_long_press_registered[i] && (current_millis - press_start_time[i]) > LONG_PRESS_DURATION) {
+                is_long_press_registered[i] = true;
+                last_repeat_time[i] = current_millis;
+                return long_press_events[i];
+            }
+            // Check for subsequent repeat events
+            else if (is_long_press_registered[i] && (current_millis - last_repeat_time[i]) > LONG_PRESS_REPEAT_DELAY) {
+                last_repeat_time[i] = current_millis;
+                return repeat_events[i];
+            }
+        }
     }
     
-    // If no button press was detected, return NONE
+    // If no event was generated, return NONE
     return InputEvent::INPUT_EVENT_NONE;
 }

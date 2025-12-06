@@ -81,10 +81,18 @@ void loop() {
             int device_count = bluetooth_manager.getDiscoveredDevices().size();
             switch (event) {
                 case InputEvent::INPUT_EVENT_UP:
-                    if (bt_menu_selected > 0) bt_menu_selected--;
+                case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_UP_REPEAT:
+                    if (device_count > 0) {
+                        bt_menu_selected = (bt_menu_selected > 0) ? bt_menu_selected - 1 : device_count - 1;
+                    }
                     break;
                 case InputEvent::INPUT_EVENT_DOWN:
-                    if (device_count > 0 && bt_menu_selected < device_count - 1) bt_menu_selected++;
+                case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_DOWN_REPEAT:
+                    if (device_count > 0) {
+                        bt_menu_selected = (bt_menu_selected < device_count - 1) ? bt_menu_selected + 1 : 0;
+                    }
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
                     current_screen = AppScreen::SCREEN_TRACK_SELECTION;
@@ -109,10 +117,18 @@ void loop() {
             int track_count = playlist_manager.getTrackCount();
             switch (event) {
                 case InputEvent::INPUT_EVENT_UP:
-                    if (playlist_menu_selected > 0) playlist_menu_selected--;
+                case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_UP_REPEAT:
+                    if (track_count > 0) {
+                        playlist_menu_selected = (playlist_menu_selected > 0) ? playlist_menu_selected - 1 : track_count - 1;
+                    }
                     break;
                 case InputEvent::INPUT_EVENT_DOWN:
-                    if (track_count > 0 && playlist_menu_selected < track_count - 1) playlist_menu_selected++;
+                case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_DOWN_REPEAT:
+                    if (track_count > 0) {
+                        playlist_menu_selected = (playlist_menu_selected < track_count - 1) ? playlist_menu_selected + 1 : 0;
+                    }
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
                     current_screen = AppScreen::SCREEN_NOW_PLAYING;
@@ -135,9 +151,13 @@ void loop() {
         case AppScreen::SCREEN_NOW_PLAYING: {
             switch (event) {
                 case InputEvent::INPUT_EVENT_UP:
+                case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_UP_REPEAT:
                     music_player.executeCommand(PlayerCommand::PREV_TRACK);
                     break;
                 case InputEvent::INPUT_EVENT_DOWN:
+                case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_DOWN_REPEAT:
                     music_player.executeCommand(PlayerCommand::NEXT_TRACK);
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
@@ -147,6 +167,7 @@ void loop() {
                     current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                     break;
                 case InputEvent::INPUT_EVENT_ENTER:
+                case InputEvent::INPUT_EVENT_ENTER_LONG_PRESS:
                     if (music_player.getState() == PlayerState::PLAYING) {
                         music_player.executeCommand(PlayerCommand::PAUSE);
                     } else {

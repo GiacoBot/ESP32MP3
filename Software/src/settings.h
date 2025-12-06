@@ -99,6 +99,8 @@ const unsigned char splash_screen_logo[] PROGMEM = {
 #define BTN_RIGHT 15
 #define BTN_ENTER 2
 #define DEBOUNCE_DELAY 50 // in milliseconds
+#define LONG_PRESS_DURATION 500 // ms to trigger a long press
+#define LONG_PRESS_REPEAT_DELAY 150 // ms between repeat events during long press
 
 #endif // DEV_BOARD_REV_1_0
 
