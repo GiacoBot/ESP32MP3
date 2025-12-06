@@ -122,6 +122,9 @@ void DisplayManager::drawBluetoothMenu() {
         const int max_items_on_screen = 4;
         const int list_size = devices.size();
 
+        // Determine available width based on whether the scrollbar will be drawn
+        int available_width = (list_size > max_items_on_screen) ? SCREEN_WIDTH - 4 : SCREEN_WIDTH;
+
         // --- Vertical Scrolling Logic ---
         int direction = bt_menu_selected_index - prev_bt_menu_selected_index;
         if (direction > 0) { // Moving Down
@@ -153,19 +156,16 @@ void DisplayManager::drawBluetoothMenu() {
             if (item_index == bt_menu_selected_index) {
                 // --- Horizontal Scrolling Logic for Selected Item ---
                 u8g2_uint_t text_width = u8g2.getStrWidth(device_name.c_str());
+                int text_area_width = available_width - 2; // -2 for padding at x=2
 
-                if (text_width > SCREEN_WIDTH - 2) { // -2 for padding
-                    int max_scroll_offset = text_width - (SCREEN_WIDTH - 2);
-
-                    // If we have scrolled past the end
+                if (text_width > text_area_width) {
+                    int max_scroll_offset = text_width - text_area_width;
                     if (bt_text_scroll_offset_pixels > max_scroll_offset) {
-                        // Pause at the end for the specified delay
                         if (millis() - bt_last_scroll_time > MENU_SCROLL_DELAY) {
-                            bt_text_scroll_offset_pixels = 0; // Reset scroll
-                            bt_last_selection_time = millis(); // Restart the whole cycle with initial delay
+                            bt_text_scroll_offset_pixels = 0;
+                            bt_last_selection_time = millis();
                         }
                     } 
-                    // Else, we are either waiting to start or actively scrolling
                     else {
                         if (millis() - bt_last_selection_time > MENU_SCROLL_DELAY) {
                             if (millis() - bt_last_scroll_time > MENU_SCROLL_SPEED) {
@@ -183,22 +183,23 @@ void DisplayManager::drawBluetoothMenu() {
                 u8g2.drawStr(2 - bt_text_scroll_offset_pixels, y, device_name.c_str());
                 u8g2.setDrawColor(1);
             } else {
+                // Clip non-selected items to prevent drawing over the scrollbar
+                u8g2.setClipWindow(0, y - line_height, available_width, y + 2);
                 u8g2.drawStr(2, y, device_name.c_str());
+                u8g2.setMaxClipWindow(); // Reset clipping
             }
             y += line_height;
         }
 
         if (list_size > max_items_on_screen) {
             // --- Scrollbar Drawing ---
-            const int scrollbar_y_start = 20;   // Approx top pixel of the first menu item's highlight box
-            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start ; // Pixel height of the 4 menu items
-            
-            // Calculate handle height (proportional to content shown)
+            const int scrollbar_y_start = 20;
+            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start;
             int handle_height = (float)scrollbar_area_height * ((float)max_items_on_screen / list_size);
-            handle_height = max(2, handle_height); // Min height of 2px
-
-            // Calculate handle position (proportional to scroll)
-            float scroll_percent = (float)playlist_menu_scroll_offset / (list_size - max_items_on_screen);
+            handle_height = max(2, handle_height);
+            
+            // FIX: Use bt_menu_scroll_offset instead of playlist_menu_scroll_offset
+            float scroll_percent = (float)bt_menu_scroll_offset / (list_size - max_items_on_screen);
             int handle_y_offset = (scrollbar_area_height - handle_height) * scroll_percent;
             
             // Draw the scrollbar handle
@@ -222,6 +223,9 @@ void DisplayManager::drawPlaylistMenu() {
     } else {
         const int max_items_on_screen = 4;
         const int list_size = tracks.size();
+
+        // Determine available width based on whether the scrollbar will be drawn
+        int available_width = (list_size > max_items_on_screen) ? SCREEN_WIDTH - 4 : SCREEN_WIDTH;
 
         // --- Vertical Scrolling Logic ---
         int direction = playlist_menu_selected_index - prev_playlist_menu_selected_index;
@@ -254,19 +258,16 @@ void DisplayManager::drawPlaylistMenu() {
             if (item_index == playlist_menu_selected_index) {
                 // --- Horizontal Scrolling Logic for Selected Item ---
                 u8g2_uint_t text_width = u8g2.getStrWidth(track_name.c_str());
+                int text_area_width = available_width - 2; // -2 for padding at x=2
 
-                if (text_width > SCREEN_WIDTH - 2) { // -2 for padding
-                    int max_scroll_offset = text_width - (SCREEN_WIDTH - 2);
-
-                    // If we have scrolled past the end
+                if (text_width > text_area_width) {
+                    int max_scroll_offset = text_width - text_area_width;
                     if (playlist_text_scroll_offset_pixels > max_scroll_offset) {
-                        // Pause at the end for the specified delay
                         if (millis() - playlist_last_scroll_time > MENU_SCROLL_DELAY) {
-                            playlist_text_scroll_offset_pixels = 0; // Reset scroll
-                            playlist_last_selection_time = millis(); // Restart the whole cycle
+                            playlist_text_scroll_offset_pixels = 0;
+                            playlist_last_selection_time = millis();
                         }
                     }
-                    // Else, we are either waiting to start or actively scrolling
                     else {
                         if (millis() - playlist_last_selection_time > MENU_SCROLL_DELAY) {
                             if (millis() - playlist_last_scroll_time > MENU_SCROLL_SPEED) {
@@ -284,21 +285,20 @@ void DisplayManager::drawPlaylistMenu() {
                 u8g2.drawStr(2 - playlist_text_scroll_offset_pixels, y, track_name.c_str());
                 u8g2.setDrawColor(1);
             } else {
+                // Clip non-selected items to prevent drawing over the scrollbar
+                u8g2.setClipWindow(0, y - line_height, available_width, y + 2);
                 u8g2.drawStr(2, y, track_name.c_str());
+                u8g2.setMaxClipWindow(); // Reset clipping
             }
             y += line_height;
         }
 
         if (list_size > max_items_on_screen) {
             // --- Scrollbar Drawing ---
-            const int scrollbar_y_start = 20;   // Approx top pixel of the first menu item's highlight box
-            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start ; // Pixel height of the 4 menu items
-            
-            // Calculate handle height (proportional to content shown)
+            const int scrollbar_y_start = 20;
+            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start;
             int handle_height = (float)scrollbar_area_height * ((float)max_items_on_screen / list_size);
-            handle_height = max(2, handle_height); // Min height of 2px
-
-            // Calculate handle position (proportional to scroll)
+            handle_height = max(2, handle_height);
             float scroll_percent = (float)playlist_menu_scroll_offset / (list_size - max_items_on_screen);
             int handle_y_offset = (scrollbar_area_height - handle_height) * scroll_percent;
             
