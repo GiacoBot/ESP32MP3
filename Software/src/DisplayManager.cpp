@@ -124,13 +124,15 @@ void DisplayManager::drawBluetoothMenu() {
         
         u8g2_uint_t w2 = u8g2.getStrWidth(line2.c_str());
         u8g2.drawStr((SCREEN_WIDTH - w2) / 2, 42, line2.c_str());
+
+        // Draw the Cancel button
+        u8g2.drawButtonUTF8(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 6, U8G2_BTN_INV | U8G2_BTN_HCENTER | U8G2_BTN_BW1, 0, 5, 2, "Cancel");
     }
     // --- Mode 2: A device is currently connected ---
     else if (bluetooth_manager->isConnected()) {
         String line1 = "Connected to:";
         String line2 = bluetooth_manager->getConnectedDeviceName();
-        String button = "[ Disconnect ]";
-
+        
         // Center and draw text
         u8g2_uint_t w1 = u8g2.getStrWidth(line1.c_str());
         u8g2.drawStr((SCREEN_WIDTH - w1) / 2, 30, line1.c_str());
@@ -138,14 +140,8 @@ void DisplayManager::drawBluetoothMenu() {
         u8g2_uint_t w2 = u8g2.getStrWidth(line2.c_str());
         u8g2.drawStr((SCREEN_WIDTH - w2) / 2, 42, line2.c_str());
 
-        // Draw the disconnect button, highlighted
-        const int line_height = 11;
-        u8g2_uint_t w3 = u8g2.getStrWidth(button.c_str());
-        int button_y = SCREEN_HEIGHT - 4;
-        u8g2.drawBox((SCREEN_WIDTH - w3) / 2 - 2, button_y - line_height + 2, w3 + 4, line_height);
-        u8g2.setDrawColor(0); // Inverted color for text
-        u8g2.drawStr((SCREEN_WIDTH - w3) / 2, button_y, button.c_str());
-        u8g2.setDrawColor(1); // Reset color
+        // Draw the disconnect button using the u8g2 button function
+        u8g2.drawButtonUTF8(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 6, U8G2_BTN_INV | U8G2_BTN_HCENTER | U8G2_BTN_BW1, 0, 5, 2, "Disconnect");
     } 
     // --- Mode 3: Not connected, show device list ---
     else {

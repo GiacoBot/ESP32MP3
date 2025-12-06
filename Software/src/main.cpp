@@ -81,8 +81,11 @@ void loop() {
             // --- Logic for this screen depends on connection state ---
             if (bluetooth_manager.isConnecting()) {
                 // --- CONNECTING STATE ---
-                // While connecting, the screen is non-interactive. Only allow screen switching.
+                // While connecting, the screen is non-interactive. Only allow screen switching and ENTER to cancel.
                 switch (event) {
+                    case InputEvent::INPUT_EVENT_ENTER:
+                        bluetooth_manager.disconnect(); // Disconnecting aborts the connection attempt
+                        break;
                     case InputEvent::INPUT_EVENT_RIGHT:
                         current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                         break;
