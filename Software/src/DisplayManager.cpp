@@ -139,7 +139,7 @@ void DisplayManager::drawBluetoothMenu() {
             bt_menu_scroll_offset = 0;
         }
 
-        int y = 26; // Starting Y for the list
+        int y = 29; // Starting Y for the list
         const int line_height = 11;
         
         for (int i = 0; i < max_items_on_screen; ++i) {
@@ -187,6 +187,27 @@ void DisplayManager::drawBluetoothMenu() {
             }
             y += line_height;
         }
+
+        if (list_size > max_items_on_screen) {
+            // --- Scrollbar Drawing ---
+            const int scrollbar_y_start = 20;   // Approx top pixel of the first menu item's highlight box
+            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start ; // Pixel height of the 4 menu items
+            
+            // Calculate handle height (proportional to content shown)
+            int handle_height = (float)scrollbar_area_height * ((float)max_items_on_screen / list_size);
+            handle_height = max(2, handle_height); // Min height of 2px
+
+            // Calculate handle position (proportional to scroll)
+            float scroll_percent = (float)playlist_menu_scroll_offset / (list_size - max_items_on_screen);
+            int handle_y_offset = (scrollbar_area_height - handle_height) * scroll_percent;
+            
+            // Draw the scrollbar handle
+            u8g2.setDrawColor(0);            
+            u8g2.drawBox(SCREEN_WIDTH - 4, scrollbar_y_start, 4, scrollbar_area_height);
+            u8g2.setDrawColor(1);
+            u8g2.drawLine(SCREEN_WIDTH - 2, scrollbar_y_start, SCREEN_WIDTH - 2, SCREEN_HEIGHT);
+            u8g2.drawBox(SCREEN_WIDTH - 3, scrollbar_y_start + handle_y_offset, 3, handle_height);
+        }
     }
 }
 
@@ -219,7 +240,7 @@ void DisplayManager::drawPlaylistMenu() {
             playlist_menu_scroll_offset = 0;
         }
 
-        int y = 26; // Starting Y for the list
+        int y = 29; // Starting Y for the list
         const int line_height = 11;
 
         for (int i = 0; i < max_items_on_screen; ++i) {
@@ -266,6 +287,27 @@ void DisplayManager::drawPlaylistMenu() {
                 u8g2.drawStr(2, y, track_name.c_str());
             }
             y += line_height;
+        }
+
+        if (list_size > max_items_on_screen) {
+            // --- Scrollbar Drawing ---
+            const int scrollbar_y_start = 20;   // Approx top pixel of the first menu item's highlight box
+            const int scrollbar_area_height = SCREEN_HEIGHT - scrollbar_y_start ; // Pixel height of the 4 menu items
+            
+            // Calculate handle height (proportional to content shown)
+            int handle_height = (float)scrollbar_area_height * ((float)max_items_on_screen / list_size);
+            handle_height = max(2, handle_height); // Min height of 2px
+
+            // Calculate handle position (proportional to scroll)
+            float scroll_percent = (float)playlist_menu_scroll_offset / (list_size - max_items_on_screen);
+            int handle_y_offset = (scrollbar_area_height - handle_height) * scroll_percent;
+            
+            // Draw the scrollbar handle
+            u8g2.setDrawColor(0);            
+            u8g2.drawBox(SCREEN_WIDTH - 4, scrollbar_y_start, 4, scrollbar_area_height);
+            u8g2.setDrawColor(1);
+            u8g2.drawLine(SCREEN_WIDTH - 2, scrollbar_y_start, SCREEN_WIDTH - 2, SCREEN_HEIGHT);
+            u8g2.drawBox(SCREEN_WIDTH - 3, scrollbar_y_start + handle_y_offset, 3, handle_height);
         }
     }
 }
