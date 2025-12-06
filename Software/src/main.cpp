@@ -78,37 +78,62 @@ void loop() {
     // --- State Machine Logic ---
     switch (current_screen) {
         case AppScreen::SCREEN_BLUETOOTH_SELECTION: {
-            int device_count = bluetooth_manager.getDiscoveredDevices().size();
-            switch (event) {
-                case InputEvent::INPUT_EVENT_UP:
-                case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
-                case InputEvent::INPUT_EVENT_UP_REPEAT:
-                    if (device_count > 0) {
-                        bt_menu_selected = (bt_menu_selected > 0) ? bt_menu_selected - 1 : device_count - 1;
-                    }
-                    break;
-                case InputEvent::INPUT_EVENT_DOWN:
-                case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
-                case InputEvent::INPUT_EVENT_DOWN_REPEAT:
-                    if (device_count > 0) {
-                        bt_menu_selected = (bt_menu_selected < device_count - 1) ? bt_menu_selected + 1 : 0;
-                    }
-                    break;
-                case InputEvent::INPUT_EVENT_RIGHT:
-                    current_screen = AppScreen::SCREEN_TRACK_SELECTION;
-                    break;
-                case InputEvent::INPUT_EVENT_LEFT:
-                    current_screen = AppScreen::SCREEN_NOW_PLAYING;
-                    break;
-                case InputEvent::INPUT_EVENT_ENTER:
-                    if (device_count > 0 && bt_menu_selected < device_count) {
-                        const auto& devices = bluetooth_manager.getDiscoveredDevices();
-                        bluetooth_manager.connect(devices[bt_menu_selected]);
+            // --- Logic for this screen depends on connection state ---
+            if (bluetooth_manager.isConnected()) {
+                // --- CONNECTED STATE ---
+                // In this state, there's only one option: Disconnect.
+                bt_menu_selected = 0; // Always select the "Disconnect" button
+                
+                switch (event) {
+                    case InputEvent::INPUT_EVENT_ENTER:
+                        bluetooth_manager.disconnect();
+                        // After disconnecting, discovery will start automatically (handled in BluetoothManager)
+                        break;
+                    // In connected state, other navigation buttons do nothing
+                    case InputEvent::INPUT_EVENT_RIGHT:
+                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        break;
+                    case InputEvent::INPUT_EVENT_LEFT:
                         current_screen = AppScreen::SCREEN_NOW_PLAYING;
-                    }
-                    break;
-                default: break;
+                        break;
+                    default: break;
+                }
+            } else {
+                // --- DISCONNECTED STATE ---
+                // In this state, we are browsing the list of discovered devices
+                int device_count = bluetooth_manager.getDiscoveredDevices().size();
+                switch (event) {
+                    case InputEvent::INPUT_EVENT_UP:
+                    case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
+                    case InputEvent::INPUT_EVENT_UP_REPEAT:
+                        if (device_count > 0) {
+                            bt_menu_selected = (bt_menu_selected > 0) ? bt_menu_selected - 1 : device_count - 1;
+                        }
+                        break;
+                    case InputEvent::INPUT_EVENT_DOWN:
+                    case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
+                    case InputEvent::INPUT_EVENT_DOWN_REPEAT:
+                        if (device_count > 0) {
+                            bt_menu_selected = (bt_menu_selected < device_count - 1) ? bt_menu_selected + 1 : 0;
+                        }
+                        break;
+                    case InputEvent::INPUT_EVENT_RIGHT:
+                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        break;
+                    case InputEvent::INPUT_EVENT_LEFT:
+                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        break;
+                    case InputEvent::INPUT_EVENT_ENTER:
+                        if (device_count > 0 && bt_menu_selected < device_count) {
+                            const auto& devices = bluetooth_manager.getDiscoveredDevices();
+                            bluetooth_manager.connect(devices[bt_menu_selected]);
+                            // Don't switch screen immediately, wait for connection confirmation
+                        }
+                        break;
+                    default: break;
+                }
             }
+            // Update the display manager with the current selection state
             display_manager.setBluetoothMenuState(bt_menu_selected, bt_menu_offset);
             break;
         }

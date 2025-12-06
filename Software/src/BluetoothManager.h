@@ -31,6 +31,7 @@ public:
     bool connect(const BluetoothDevice& device);
     void disconnect();
     bool isConnected() const;
+    String getConnectedDeviceName() const;
     
     // --- Static Callbacks (for A2DP Library hooks) ---
     // Callback for A2DP audio data
@@ -49,6 +50,8 @@ private:
     MusicPlayer* music_player;
     bool connected;
     bool discovering;
+    BluetoothDevice connected_device;
+    BluetoothDevice connecting_device; // Temporarily store device info during connection attempt
 
     std::vector<BluetoothDevice> discovered_devices;
     
