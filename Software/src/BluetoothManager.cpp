@@ -16,7 +16,8 @@ BluetoothManager::BluetoothManager() :
     music_player(nullptr),
     connected(false),
     discovering(false),
-    connecting(false) {
+    connecting(false),
+    _connection_event_pending(false) { // Initialize the new flag
     instance = this; // For static callbacks
     memset(&connected_device, 0, sizeof(BluetoothDevice));
     memset(&connecting_device, 0, sizeof(BluetoothDevice));
@@ -106,6 +107,14 @@ String BluetoothManager::getConnectingDeviceName() const {
     return connecting_device.name;
 }
 
+bool BluetoothManager::hasConnectionEvent() const {
+    return _connection_event_pending;
+}
+
+void BluetoothManager::consumeConnectionEvent() {
+    _connection_event_pending = false;
+}
+
 // --- Library Callback Implementations ---
 
 bool BluetoothManager::ssid_callback(const char* ssid, esp_bd_addr_t address, int rssi) {
@@ -164,6 +173,7 @@ void BluetoothManager::connectionStateCallback(esp_a2d_connection_state_t state,
             instance->connected_device = instance->connecting_device;
             Serial.printf("Stored connected device: %s\n", instance->connected_device.name.c_str());
             if (instance->music_player) instance->music_player->notifyConnectionStateChanged(true);
+            instance->_connection_event_pending = true; // Signal the event
             break;
         case ESP_A2D_CONNECTION_STATE_DISCONNECTING:
             Serial.println("DISCONNECTING");

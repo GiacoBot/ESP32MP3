@@ -220,6 +220,14 @@ void loop() {
         }
     }
 
+    // Check for Bluetooth connection event to trigger screen transition
+    if (bluetooth_manager.hasConnectionEvent()) {
+        if (current_screen == AppScreen::SCREEN_BLUETOOTH_SELECTION){
+            current_screen = AppScreen::SCREEN_NOW_PLAYING;
+        }
+        bluetooth_manager.consumeConnectionEvent();
+    }
+
     display_manager.update(current_screen);
     delay(20);
 }
