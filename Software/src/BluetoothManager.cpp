@@ -1,10 +1,6 @@
 #include "BluetoothManager.h"
 #include "MusicPlayer.h"
 #include "AudioProcessor.h"
-#include "esp_bt_main.h"
-#include "esp_bt_device.h"
-#include "esp_gap_bt_api.h"
-#include "esp_a2dp_api.h"
 
 // Static variable for callbacks
 BluetoothManager* BluetoothManager::instance = nullptr;
@@ -78,16 +74,16 @@ bool BluetoothManager::connect(const BluetoothDevice& device) {
     if (discovering) {
         stopDiscovery();
     }
-    this->connecting = true;
-    this->connecting_device = device;
-    a2dp_source.connect(const_cast<uint8_t*>(device.address));
+    connecting = true;
+    connecting_device = device;
+    a2dp_source.connect_to(const_cast<uint8_t*>(device.address));
     return true;
 }
 
 void BluetoothManager::disconnect() {
     if (connected) {
         Serial.printf("Disconnecting from %s...\n", connected_device.name.c_str());
-        esp_a2d_source_disconnect(connected_device.address);
+        a2dp_source.set_connected(false);
     }
 }
 

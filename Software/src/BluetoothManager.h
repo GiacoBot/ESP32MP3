@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <vector>
 #include "esp_gap_bt_api.h" // For GAP events and types
-#include "CustomA2DPSource.h"
+#include "BluetoothA2DPSource.h"
 
 class MusicPlayer; // Forward declaration
 
@@ -50,7 +50,7 @@ public:
     static void discovery_mode_callback(esp_bt_gap_discovery_state_t state);
 
 private:
-    CustomA2DPSource a2dp_source;
+    BluetoothA2DPSource a2dp_source;
     MusicPlayer* music_player;
     bool connected;
     bool discovering;
