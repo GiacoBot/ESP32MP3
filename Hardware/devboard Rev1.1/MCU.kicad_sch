@@ -1478,7 +1478,7 @@
 		(uuid "77763bc8-1188-4375-a730-c8751fd36455")
 	)
 	(no_connect
-		(at 165.1 82.55)
+		(at 165.1 74.93)
 		(uuid "8ee609f0-1b38-4da6-a1ea-f6da58176b86")
 	)
 	(no_connect
@@ -1556,16 +1556,6 @@
 			(type default)
 		)
 		(uuid "2e53fbb9-ae8c-4c8d-a8eb-72fb37992e66")
-	)
-	(wire
-		(pts
-			(xy 172.72 74.93) (xy 165.1 74.93)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "316ccb78-5adc-41a5-9514-cd98c11d4f7b")
 	)
 	(wire
 		(pts
@@ -1726,6 +1716,16 @@
 			(type default)
 		)
 		(uuid "9e2a9221-742c-47b4-98f5-4182eba58863")
+	)
+	(wire
+		(pts
+			(xy 172.72 82.55) (xy 165.1 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a013700d-fdac-4c28-89ee-fb958a5bc8ed")
 	)
 	(wire
 		(pts
@@ -1948,17 +1948,6 @@
 		)
 		(uuid "0205cb11-f9c2-4dbd-abbf-498f181fe62f")
 	)
-	(hierarchical_label "BTN ENTER"
-		(shape passive)
-		(at 172.72 74.93 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "129cbc16-603b-4f14-92ef-e83826f26cd2")
-	)
 	(hierarchical_label "SCK"
 		(shape output)
 		(at 172.72 113.03 0)
@@ -2049,7 +2038,7 @@
 	)
 	(hierarchical_label "BTN DOWN"
 		(shape passive)
-		(at 172.72 97.79 0)
+		(at 172.72 82.55 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2057,6 +2046,17 @@
 			(justify left)
 		)
 		(uuid "b4dd6b65-4557-46e9-afcf-1031f3ff00ba")
+	)
+	(hierarchical_label "BTN ENTER"
+		(shape passive)
+		(at 172.72 80.01 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "bb3c7a34-ebf1-4c43-b9f9-6cda52fa2e08")
 	)
 	(hierarchical_label "MOSI"
 		(shape output)
@@ -2093,7 +2093,7 @@
 	)
 	(hierarchical_label "BTN LEFT"
 		(shape passive)
-		(at 172.72 80.01 0)
+		(at 172.72 97.79 0)
 		(effects
 			(font
 				(size 1.27 1.27)
