@@ -1,0 +1,189 @@
+(footprint "PTS526SM15SMTR2LFS"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "PTS526 SM15 SMTR2 LFS-2")
+	(tags "tactile switch")
+	(property "Reference" "REF**"
+		(at 0 -0.1 0)
+		(layer "F.SilkS")
+		(uuid "44865312-4072-4643-917b-6728a501e229")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "PTS526SM15SMTR2LFS"
+		(at 0 3.71 0)
+		(layer "F.Fab")
+		(uuid "75d57ad0-a037-4f6f-8e81-68afb1195c79")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "cef0570f-ad36-40c5-b968-4ce383ecfb74")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c92a089a-84c8-4b09-a2f8-6704426536b3")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_line
+		(start -2.6 -0.5)
+		(end -2.6 0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "1f0fa50e-3222-4efc-9448-cc6e2d725512")
+	)
+	(fp_line
+		(start -1.5 -2.6)
+		(end 1.5 -2.6)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "04b54ba7-a527-42b1-9593-3f49e3e8f84b")
+	)
+	(fp_line
+		(start -1.5 2.6)
+		(end 1.5 2.6)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "13ff607b-11a4-4f1d-bc57-e7368b22d116")
+	)
+	(fp_line
+		(start 2.6 -0.5)
+		(end 2.6 0.5)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "3552b991-88d3-48ba-a429-639619e258a9")
+	)
+	(fp_poly
+		(pts
+			(xy 2.9 -2.9) (xy 2.900473 -2.500532) (xy 3.8 -2.5) (xy 3.8 -1.2) (xy 2.9 -1.2) (xy 2.9 1.2) (xy 3.8 1.2)
+			(xy 3.8 2.5) (xy 2.9 2.5) (xy 2.9 2.9) (xy -2.9 2.9) (xy -2.9 2.5) (xy -3.8 2.5) (xy -3.8 1.2) (xy -2.9 1.2)
+			(xy -2.9 -1.2) (xy -3.8 -1.2) (xy -3.8 -2.5) (xy -2.9 -2.5) (xy -2.9 -2.9)
+		)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "c7f38734-82a9-49b1-9989-59173caa09dc")
+	)
+	(fp_line
+		(start -2.6 -2.6)
+		(end 2.6 -2.6)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "2222a784-ac69-4e9f-8c1f-320596803ccc")
+	)
+	(fp_line
+		(start -2.6 2.6)
+		(end -2.6 -2.6)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "4324cfce-304d-4f9e-bd8f-980f099af599")
+	)
+	(fp_line
+		(start 2.6 -2.6)
+		(end 2.6 2.6)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "6007abd8-2870-42db-9494-0b3b884f2148")
+	)
+	(fp_line
+		(start 2.6 2.6)
+		(end -2.6 2.6)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "7da55ae6-1795-451c-a8d9-048ae973246b")
+	)
+	(pad "1" smd rect
+		(at -3 -1.85)
+		(size 1 0.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "4fcebf87-5850-462e-8787-ca843efe3130")
+	)
+	(pad "2" smd rect
+		(at 3 -1.85)
+		(size 1 0.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "ea6d7934-a1c8-4b0e-97ba-1b10342b7f10")
+	)
+	(pad "3" smd rect
+		(at -3 1.85)
+		(size 1 0.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "9e08d7ec-4f09-4ef2-969e-5a221b894f6f")
+	)
+	(pad "4" smd rect
+		(at 3 1.85)
+		(size 1 0.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(solder_mask_margin 0.102)
+		(uuid "9a82a583-f9e7-4400-9bad-9cbbb4c4b861")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/Library.3dmodels/PTS526SK15SMTR2LFS.stp"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
