@@ -29,6 +29,40 @@ int bt_menu_offset = 0;
 int playlist_menu_selected = 0;
 int playlist_menu_offset = 0;
 
+AppScreen getNextScreen(AppScreen current_screen) {
+    switch (current_screen)
+    {
+    case AppScreen::SCREEN_BLUETOOTH_SELECTION:
+        return AppScreen::SCREEN_TRACK_SELECTION;
+    case AppScreen::SCREEN_TRACK_SELECTION:
+        return AppScreen::SCREEN_NOW_PLAYING;
+    case AppScreen::SCREEN_NOW_PLAYING:
+        return AppScreen::SCREEN_VOLUME;
+    case AppScreen::SCREEN_VOLUME:
+        return AppScreen::SCREEN_BLUETOOTH_SELECTION;
+    default:
+        return current_screen;
+        break;
+    }
+}
+
+AppScreen getPrevScreen(AppScreen current_screen) {
+    switch (current_screen)
+    {
+    case AppScreen::SCREEN_BLUETOOTH_SELECTION:
+        return AppScreen::SCREEN_VOLUME;
+    case AppScreen::SCREEN_TRACK_SELECTION:
+        return AppScreen::SCREEN_BLUETOOTH_SELECTION;
+    case AppScreen::SCREEN_NOW_PLAYING:
+        return AppScreen::SCREEN_TRACK_SELECTION;
+    case AppScreen::SCREEN_VOLUME:
+        return AppScreen::SCREEN_NOW_PLAYING;
+    default:
+        return current_screen;
+        break;
+    }
+}
+
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     while (!Serial) {}
@@ -87,10 +121,10 @@ void loop() {
                         bluetooth_manager.disconnect(); // Disconnecting aborts the connection attempt
                         break;
                     case InputEvent::INPUT_EVENT_RIGHT:
-                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        current_screen = getNextScreen(current_screen);
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = getPrevScreen(current_screen);
                         break;
                     default: break;
                 }
@@ -106,10 +140,10 @@ void loop() {
                         break;
                     // In connected state, other navigation buttons do nothing for this screen
                     case InputEvent::INPUT_EVENT_RIGHT:
-                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        current_screen = getNextScreen(current_screen);
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = getPrevScreen(current_screen);
                         break;
                     default: break;
                 }
@@ -133,10 +167,10 @@ void loop() {
                         }
                         break;
                     case InputEvent::INPUT_EVENT_RIGHT:
-                        current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                        current_screen = getNextScreen(current_screen);
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = getPrevScreen(current_screen);
                         break;
                     case InputEvent::INPUT_EVENT_ENTER:
                         if (device_count > 0 && bt_menu_selected < device_count) {
@@ -171,10 +205,10 @@ void loop() {
                     }
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
-                    current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                    current_screen = getNextScreen(current_screen);
                     break;
                 case InputEvent::INPUT_EVENT_LEFT:
-                    current_screen = AppScreen::SCREEN_BLUETOOTH_SELECTION;
+                    current_screen = getPrevScreen(current_screen);
                     break;
                 case InputEvent::INPUT_EVENT_ENTER:
                     if (track_count > 0 && playlist_menu_selected < track_count) {
@@ -201,10 +235,10 @@ void loop() {
                     music_player.executeCommand(PlayerCommand::NEXT_TRACK);
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
-                    current_screen = AppScreen::SCREEN_BLUETOOTH_SELECTION;
+                    current_screen = getNextScreen(current_screen);
                     break;
                 case InputEvent::INPUT_EVENT_LEFT:
-                    current_screen = AppScreen::SCREEN_TRACK_SELECTION;
+                    current_screen = getPrevScreen(current_screen);
                     break;
                 case InputEvent::INPUT_EVENT_ENTER:
                 case InputEvent::INPUT_EVENT_ENTER_LONG_PRESS:
@@ -217,6 +251,26 @@ void loop() {
                 default: break;
             }
             break;
+        }
+
+        case AppScreen::SCREEN_VOLUME: {
+            switch (event)
+            {
+            case InputEvent::INPUT_EVENT_UP:
+                music_player.executeCommand(PlayerCommand::VOLUME_UP);
+                break;
+            case InputEvent::INPUT_EVENT_DOWN:
+                music_player.executeCommand(PlayerCommand::VOLUME_DOWN);
+                break;
+            case InputEvent::INPUT_EVENT_RIGHT:
+                current_screen = getNextScreen(current_screen);
+                break;
+            case InputEvent::INPUT_EVENT_LEFT:
+                current_screen = getPrevScreen(current_screen);
+                break;
+            default:
+                break;
+            }
         }
     }
 
@@ -231,3 +285,5 @@ void loop() {
     display_manager.update(current_screen);
     delay(20);
 }
+
+

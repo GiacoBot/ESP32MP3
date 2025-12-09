@@ -6,10 +6,13 @@
 extern PlaylistManager playlist_manager;
 extern AudioProcessor audio_processor;
 
+
+
 MusicPlayer::MusicPlayer() : 
     current_state(PlayerState::STOPPED),
     current_track_index(-1),
-    is_busy(false) {
+    is_busy(false),
+    current_volume(0.5f) {
 }
 
 void MusicPlayer::addStateChangeCallback(StateChangeCallback callback) {
@@ -68,8 +71,10 @@ bool MusicPlayer::executeCommand(PlayerCommand cmd, int parameter) {
             return false;
             
         case PlayerCommand::VOLUME_UP:
+            setVolume(current_volume + VOLUME_STEP);
+            return true;
         case PlayerCommand::VOLUME_DOWN:
-            // To be implemented
+            setVolume(current_volume - VOLUME_STEP);
             return true;
     }
     return false;
@@ -158,4 +163,22 @@ String MusicPlayer::getCurrentTrackName() const {
         return playlist_manager.getTrackName(current_track_index);
     }
     return "None";
+}
+
+void MusicPlayer::setVolume(float new_volume) {
+    // 1. Clamp volume between 0.0 and 1.0
+    if (new_volume > 1.0f) new_volume = 1.0f;
+    if (new_volume < 0.0f) new_volume = 0.0f;
+
+    // 2. Only update if changed
+    if (current_volume != new_volume) {
+        current_volume = new_volume;
+        
+        // 3. Apply to AudioProcessor (See note below)
+        audio_processor.setVolume(current_volume); 
+
+        // 4. Log the change (as percentage)
+        int vol_percent = (int)(current_volume * 100);
+        logMessage("Volume: " + String(vol_percent) + "%");
+    }
 }

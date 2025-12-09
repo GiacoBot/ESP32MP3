@@ -101,6 +101,9 @@ void DisplayManager::update(AppScreen current_screen) {
         case AppScreen::SCREEN_NOW_PLAYING:
             drawNowPlayingScreen();
             break;
+        case AppScreen::SCREEN_VOLUME:
+            drawVolumeScreen();
+            break;
     }
 
     u8g2.sendBuffer();
@@ -387,4 +390,44 @@ void DisplayManager::drawNowPlayingScreen() {
     }
     u8g2.setCursor(0, 60);
     u8g2.print(player_status_text);
+}
+
+void DisplayManager::drawVolumeScreen() {
+    if (!music_player) return;
+
+    // 1. Draw Title
+    const char* title = "Volume";
+    u8g2_uint_t title_w = u8g2.getStrWidth(title);
+    u8g2.drawStr((SCREEN_WIDTH - title_w) / 2, 12, title);
+
+    // 2. Get Volume Data
+    // We assume getVolume() returns a float between 0.0 and 1.0
+    float volume = music_player->getVolume(); 
+    int percent = (int)(volume * 100);
+
+    // 3. Define Bar Dimensions
+    int bar_height = 12;
+    int bar_width = SCREEN_WIDTH - 20; // 10px padding on each side
+    int bar_x = 10;
+    int bar_y = 28;
+
+    // 4. Draw Bar Frame (Outline)
+    u8g2.drawFrame(bar_x, bar_y, bar_width, bar_height);
+
+    // 5. Draw Bar Fill (Solid Box)
+    if (percent > 0) {
+        int max_fill_width = bar_width - 4; // 2px internal padding
+        int current_fill_width = (int)(max_fill_width * volume);
+        
+        // Safety clamp to ensure we don't draw outside the frame
+        if (current_fill_width > max_fill_width) current_fill_width = max_fill_width;
+        if (current_fill_width < 0) current_fill_width = 0;
+
+        u8g2.drawBox(bar_x + 2, bar_y + 2, current_fill_width, bar_height - 4);
+    }
+
+    // 6. Draw Percentage Text
+    String percent_str = String(percent) + "%";
+    u8g2_uint_t text_w = u8g2.getStrWidth(percent_str.c_str());
+    u8g2.drawStr((SCREEN_WIDTH - text_w) / 2, 55, percent_str.c_str());
 }

@@ -27,6 +27,9 @@ public:
     void setBluetoothMenuState(int selected_index, int scroll_offset);
     void setPlaylistMenuState(int selected_index, int scroll_offset);
 
+    AppScreen getNextScreen(AppScreen current_screen);
+    AppScreen getPrevScreen(AppScreen current_screen);
+
 private:
     // --- Managers ---
     MusicPlayer* music_player;
@@ -59,6 +62,7 @@ private:
     void drawBluetoothMenu();
     void drawPlaylistMenu();
     void drawNowPlayingScreen();
+    void drawVolumeScreen();
 
     // --- "Now Playing" screen state tracking ---
     String last_displayed_track;

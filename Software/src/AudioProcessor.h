@@ -11,12 +11,15 @@ private:
     File current_file;
     MP3DecoderHelix mp3;
     EncodedAudioStream decoder;
+    VolumeStream volume; // <--- 1. Add VolumeStream object
     
 public:
     AudioProcessor();
     
     bool openFile(const String& filepath);
     void closeFile();
+    
+    void setVolume(float f); // <--- 2. Add setter
     
     int32_t readAudioData(uint8_t* buffer, int32_t len);
 };

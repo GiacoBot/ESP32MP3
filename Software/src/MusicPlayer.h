@@ -32,6 +32,8 @@ private:
     std::vector<StateChangeCallback> state_callbacks;
     std::vector<LogCallback> log_callbacks;
     volatile bool is_busy; // Concurrency flag
+    const float VOLUME_STEP = 0.1f;
+    float current_volume;
     
 public:
     MusicPlayer();
@@ -49,6 +51,7 @@ public:
     int getTrackCount() const;
     String getCurrentTrackName() const;
     bool isBusy() const { return is_busy; }
+    float getVolume() { return current_volume; }
     
     // For internal use (calls from A2DP callbacks)
     void notifyTrackFinished();
@@ -61,6 +64,7 @@ private:
     bool openTrack(int index);
     void nextTrack();
     void prevTrack();
+    void setVolume(float new_volume);
 };
 
 #endif
