@@ -6,7 +6,6 @@
 #include "MusicPlayer.h"
 #include "PlaylistManager.h" 
 #include "BluetoothManager.h"
-#include "SerialController.h"
 #include "AudioProcessor.h"
 #include "InputManager.h"
 #include "DisplayManager.h"
@@ -17,7 +16,6 @@
 MusicPlayer music_player;
 PlaylistManager playlist_manager(MUSIC_ROOT);
 BluetoothManager bluetooth_manager;
-SerialController serial_controller;
 AudioProcessor audio_processor;
 InputManager input_manager;
 DisplayManager display_manager;
@@ -54,11 +52,6 @@ void setup() {
         Serial.println("No MP3 files found on SD card!");
     }
     
-    serial_controller.setMusicPlayer(&music_player);
-    serial_controller.setPlaylistManager(&playlist_manager);
-    serial_controller.setBluetoothManager(&bluetooth_manager);
-    serial_controller.initialize();
-    
     bluetooth_manager.setMusicPlayer(&music_player);
     if (!bluetooth_manager.initialize("ESP32_MP3_Player")) {
         Serial.println("Failed to initialize Bluetooth");
@@ -72,7 +65,6 @@ void setup() {
 }
 
 void loop() {
-    serial_controller.handleInput();
     InputEvent event = input_manager.handleInputs();
 
     // --- State Machine Logic ---
@@ -229,5 +221,5 @@ void loop() {
     }
 
     display_manager.update(current_screen);
-    delay(20);
+    delay(100);
 }
