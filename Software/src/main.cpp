@@ -94,7 +94,7 @@ void setup() {
     serial_controller.initialize();
     
     bluetooth_manager.setMusicPlayer(&music_player);
-    if (!bluetooth_manager.initialize("ESP32_MP3_Player")) {
+    if (!bluetooth_manager.initialize("Leccatore di piedi")) {
         Serial.println("Failed to initialize Bluetooth");
         return;
     }
