@@ -24,6 +24,7 @@ SerialController serial_controller;
 AudioProcessor audio_processor;
 
 void setup() {
+    esp_task_wdt_init(30, false);
     Serial.begin(115200);
     while (!Serial) {}
     
