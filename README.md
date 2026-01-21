@@ -2,7 +2,9 @@
 
 A self-built, portable MP3 player based on ESP32, combining a custom hardware design with an intuitive software interface. It reads music from an SD card, streams audio to any Bluetooth audio device, and is controlled via an OLED display and physical buttons.
 
-[![Project Photo](images/front_back_rev1.1.png)](images/front_back_rev1.1.png)
+<p align="center">
+<img src="images/front_back_rev1.1.png" alt="Project Photo" width="50%">
+</p>
 
 ## **Introduction**
 
@@ -36,7 +38,9 @@ The result is a functional and integrated device, demonstrating expertise in bot
 
 The development board was designed in KiCad to integrate the ESP32 with all necessary modules. The design is optimized for manual assembly and for use as a portable device.
 
-[![Project Photo](images/PCB_3D.png)](images/PCB_3D.png)
+<p align="center">
+<img src="images/PCB_3D.png" alt="Project Photo" width="50%">
+</p>
 
 *   **Design Software**: KiCad
 *   **Main Processor**: ESP32-WROOM-32E module
@@ -99,7 +103,9 @@ The project is designed to be compiled with PlatformIO in Visual Studio Code.
 
 Various screenshots of the user interface:
 
-[![Project Photo](images/menus.png)](images/menus.png)
+<p align="center">
+<img src="images/menus.png" alt="Project Photo" width="100%">
+</p>
 
 ## **📜 License**
 
