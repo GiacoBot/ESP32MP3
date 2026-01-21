@@ -1,107 +1,106 @@
-## ESP32 Bluetooth MP3 Player
+# **ESP32 MP3**
 
-This project is a **proof of concept** and an **experiment** to build a Bluetooth A2DP source device using an **ESP32**. It reads MP3 files from a microSD card and streams the audio wirelessly to Bluetooth headphones or speakers.
+A self-built, portable MP3 player based on ESP32, combining a custom hardware design with an intuitive software interface. It reads music from an SD card, streams audio to any Bluetooth audio device, and is controlled via an OLED display and physical buttons.
 
-### Features
+[![Project Photo](images/front_back_rev1.1.png)](images/front_back_rev1.1.png)
 
-  * **A2DP Source:** The ESP32 acts as an A2DP source, not a sink, meaning it streams audio *to* a device like Bluetooth headphones.
-  * **MicroSD Card:** Reads MP3 audio files from a microSD card, supporting a simple file system navigation.
-  * **Playlist Management:** Automatically scans the SD card for `.mp3` files and creates an alphabetical playlist.
-  * **Serial Control:** Provides a basic command-line interface via the serial monitor to control playback (play, pause, next, previous) and manage the playlist.
-  * **AVRC Support:** Responds to playback control commands (play, pause, next, previous) sent from the connected Bluetooth device.
+## **Introduction**
 
------
+This project evolved from a simple software experiment. The initial version was merely a proof-of-concept for Bluetooth audio streaming from an ESP32. Driven by the desire to create a complete and presentable product, I designed and built a custom dev board, developing an entire graphical and physical user interface from scratch.
 
-### Project Structure & Dependencies
+The result is a functional and integrated device, demonstrating expertise in both hardware design (PCB design with KiCad) and complex firmware development (modular C++ architecture).
 
-This project is built upon the fantastic libraries by **[Phil Schatzmann](https://github.com/pschatzmann)**. A huge thank you for these tools, which make this project possible\!
+## **✨ Key Features**
 
-  * **[`arduino-audio-tools`](https://github.com/pschatzmann/arduino-audio-tools)**: Handles audio processing and decoding.
-  * **[`ESP32-A2DP`](https://github.com/pschatzmann/ESP32-A2DP)**: Manages the Bluetooth A2DP source functionality.
-  * **[`arduino-libhelix`](https://github.com/pschatzmann/arduino-libhelix)**: Provides the MP3 decoding engine (based on the Helix MP3 decoder).
+#### **Hardware**
 
-### Hardware Requirements
+*   **Custom Dev Board (Rev 1.1)**: Development board entirely designed with KiCad to house all components compactly and functionally.
+*   **0.96" OLED Display**: Monochrome screen (SSD1306 128x64) for a clear, low-power user interface.
+*   **Physical Controls**: Interface navigation is managed by 5 physical buttons (Up, Down, Left, Right, Enter).
+*   **MicroSD Card Storage**: A MicroSD card slot allows easy loading and playback of your music library.
+*   **Power Management**: Power circuit with support for Li-Ion batteries and USB-C charging.
 
-  * **ESP32** (I used ESP32-WROOM-32D, but any ESP32 board should work)
-  * **MicroSD card reader module**
-  * **MicroSD card** with MP3 files
-  * **Connecting wires**
+#### **Software**
 
-Connect your SD card reader to the ESP32. The code is configured for the CS pin to be on **GPIO5**. You may need to adjust this constant (`SD_CS_PIN`) in the code to match your wiring.
+*   **Bluetooth Audio Streaming (A2DP Source)**: Connects to Bluetooth headphones and speakers for high-quality wireless playback.
+*   **Multi-screen User Interface**:
+    *   **Bluetooth Device Selection**: Scans for nearby audio devices and manages the connection.
+    *   **Track Selection**: Allows browsing the complete playlist of songs on the SD Card.
+    *   **Now Playing**: Displays track information (if available), song title, artist, and a progress bar.
+    *   **Volume Control**: (WIP, coming soon) Adjusts the playback volume directly from the interface.
+*   **Advanced Playlist Management**: Automatically scans the SD card on startup to find all `.mp3` files.
+*   **Intuitive User Input**: Supports short press, long press, and auto-repeat of buttons for smooth and fast navigation.
+*   **Modular Firmware Architecture**: The code is organized into specialized "Managers" (Display, Input, Bluetooth, Player), making the system scalable, maintainable, and easy to debug.
 
-The default SPI pins on the ESP32 are:
-* **MISO**: GPIO19
-* **MOSI**: GPIO23
-* **SCK**: GPIO18
-* **SS (Chip Select)**: GPIO5
+## **⚙️ Hardware Details**
 
------
+The development board was designed in KiCad to integrate the ESP32 with all necessary modules. The design is optimized for manual assembly and for use as a portable device.
 
-### Getting Started
+[![Project Photo](images/PCB_3D.png)](images/PCB_3D.png)
 
-#### 1\. Software Setup
+*   **Design Software**: KiCad
+*   **Main Processor**: ESP32-WROOM-32E module
+*   **Display**: 0.96 inch (128x64) SSD1306 I2C/SPI OLED module
+*   **Storage**: Standard MicroSD card reader
+*   **Hardware Repository**: KiCad project files (schematics, PCB, and libraries) are available in the [`/Hardware/devboard Rev1.1`](/Hardware/devboard%20Rev1.1/) folder.
 
-To get started, you'll need to use PlatformIO.
+## **💻 Software Details**
 
-  * **Install PlatformIO**: If you haven't already, follow the [official PlatformIO installation guide](https://platformio.org/install).
+The firmware is developed using the Arduino framework within PlatformIO, which simplifies dependency management and compilation.
 
-  * **Clone the Repository**: Clone this project's repository to your local machine.
-    ```bash
-    git clone https://github.com/GiacoBot/ESP32MP3
-    cd ESP32MP3
-    ```
+*   **Framework**: Arduino / PlatformIO
+*   **Key Libraries**:
+    *   **[`U8g2`](https://github.com/olikraus/U8g2)**: Excellent library for managing monochrome displays.
+    *   **[`arduino-audio-tools`](https://github.com/pschatzmann/arduino-audio-tools)**: For the audio decoding and processing pipeline.
+    *   **[`ESP32-A2DP`](https://github.com/pschatzmann/ESP32-A2DP)**: For implementing the Bluetooth A2DP Source stack.
+    *   **[`arduino-libhelix`](https://github.com/pschatzmann/arduino-libhelix)**: Provides the MP3 decoder based on Helix.
+*   **Architecture**: The heart of the software is a state machine that manages navigation between different screens (`AppScreen`). The logic is divided into independent manager classes that communicate via an event system (`InputEvent`) and shared states, ensuring high cohesion and low coupling between modules.
 
-  * **Initialize Submodules**: This project uses several libraries as Git submodules. Run the following command to download them:
+## **🚀 Getting Started**
 
-    ```bash
-    git submodule update --init --recursive
-    ```
+> [!NOTE]  
+> If you want to try a simplified version of the project, you can try the alpha version, a proof of concept that only requires a breakout module for the micro SD and an ESP32 board. Follow the `README` in the alpha version for instructions.
 
-#### 2\. Hardware and Code Configuration
+#### **1. Hardware Prerequisites**
 
-  * **Connect Hardware**: Wire your SD card reader to the ESP32. The code is configured for the **CS pin to be on GPIO5**. If you've used a different pin, you'll need to update the `SD_CS_PIN` constant in the code to match your wiring.
-
-  * **Target Device Name**: By default, the code is set to connect to a device named "Lenovo LP40". You can change this to your desired Bluetooth device's name by modifying the `TARGET_DEVICE_NAME` constant in the code.
-    ```cpp
-    const char* TARGET_DEVICE_NAME = "YOUR DEVICE NAME HERE";
-    ```
-
-  * **Prepare Your MP3 Files**: The audio library requires MP3 files to have a sample rate of **44100 Hz**. You can use a tool like `ffmpeg` to convert your files. Here's a command for converting a single file:
+*   The assembled Dev Board.
+*   A MicroSD card formatted as FAT32 and loaded with `.mp3` files. Is required for the files to have a sample rate of 44100 Hz, use the following `ffmpeg` command to convert files if needed:
 
     ```bash
     ffmpeg -i input.mp3 -ar 44100 output.mp3
     ```
+*   A USB-C cable to upload the firmware.
 
-    Once converted, place the MP3 files on your microSD card and insert it into the reader.
+#### **2. Software Setup**
 
-#### 3\. Uploading the Code
+The project is designed to be compiled with PlatformIO in Visual Studio Code.
 
-  * **Open Project in VS Code**: Launch VS Code and open the project folder.
+1.  **Install VS Code and PlatformIO**: Follow the [official PlatformIO guide](https://platformio.org/install/ide?install=vscode).
+2.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/GiacoBot/ESP32MP3.git
+    cd ESP32MP3
+    ```
+3.  **Initialize Submodules**: The audio libraries are included as Git submodules.
+    ```bash
+    git submodule update --init --recursive
+    ```
+
+#### **3. Compile and Upload**
+
+1.  **Open the Project**: In VS Code, open the project folder. Make sure to open the `Software` subfolder.
 > [!IMPORTANT]  
 > The PlatformIO project is located within the `Software` folder. When you open this project in VS Code, make sure you open the `Software` directory, not the root of the repository, to ensure PlatformIO can find all the necessary files.
-  * **Upload**: Use the PlatformIO toolbar in VS Code to build and upload the sketch to your ESP32 board.
 
------
+1.  **Change Board settings**: Modify the `src/settings.h` file to match your hardware configuration if necessary (e.g., pin assignments).
+2.  **Compile and Upload**: Use the PlatformIO commands (down arrow on the status bar) to build and upload the firmware to the board.
 
-### Usage
+## **📸 Gallery**
 
-1.  **Connect ESP32**: Power on your ESP32 board.
+Various screenshots of the user interface:
 
-2.  **Open Serial Monitor**: Open the Serial Monitor in VS Code (it should already have the baud rate set to 115200). The ESP32 will automatically scan the SD card and build the playlist.
+[![Project Photo](images/menus.png)](images/menus.png)
 
-3.  **Control Playback**: Once connected, you can use the commands listed below in the Serial Monitor. The project also supports playback commands sent directly from your connected device (e.g., play/pause buttons on your headphones).
+## **📜 License**
 
-      * `c`: Connect to the device specified by `TARGET_DEVICE_NAME`.
-      * `d`: Disconnect from the current Bluetooth device.
-      * `p`: Pause or resume playback.
-      * `n`: Play the next track in the playlist.
-      * `b`: Play the previous track.
-      * `l`: List all tracks on the playlist.
-      * `1-9`: Play a specific track number (e.g., typing `3` will play the third song).
-      * `r`: Rescan the SD card to update the playlist.
-      * `s`: Show the current playback status.
-      * `h`: Display the help message.
-
------
-
-This project serves as a great starting point for anyone looking to experiment with ESP32 audio streaming and Bluetooth functionality. Feel free to fork it, modify it, and expand on its features\!
+This project is released under the GPL-3.0 License. See the [LICENSE](LICENSE) file for more details.
