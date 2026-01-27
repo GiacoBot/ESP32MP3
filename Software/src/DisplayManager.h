@@ -59,6 +59,7 @@ private:
     void drawBluetoothMenu();
     void drawPlaylistMenu();
     void drawNowPlayingScreen();
+    void drawVolumeScreen();
 
     // --- "Now Playing" screen state tracking ---
     String last_displayed_track;

@@ -1,10 +1,12 @@
 #include "MusicPlayer.h"
 #include "PlaylistManager.h"
 #include "AudioProcessor.h"
+#include "BluetoothManager.h"
 
 // Global objects defined in main.cpp
 extern PlaylistManager playlist_manager;
 extern AudioProcessor audio_processor;
+extern BluetoothManager bluetooth_manager;
 
 MusicPlayer::MusicPlayer() : 
     current_state(PlayerState::STOPPED),
@@ -68,8 +70,10 @@ bool MusicPlayer::executeCommand(PlayerCommand cmd, int parameter) {
             return false;
             
         case PlayerCommand::VOLUME_UP:
+            bluetooth_manager.volumeUp();
+            return true;
         case PlayerCommand::VOLUME_DOWN:
-            // To be implemented
+            bluetooth_manager.volumeDown();
             return true;
     }
     return false;

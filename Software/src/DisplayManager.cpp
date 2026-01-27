@@ -101,6 +101,9 @@ void DisplayManager::update(AppScreen current_screen) {
         case AppScreen::SCREEN_NOW_PLAYING:
             drawNowPlayingScreen();
             break;
+        case AppScreen::SCREEN_VOLUME_CONTROL:
+            drawVolumeScreen();
+            break;
     }
 
     u8g2.sendBuffer();
@@ -387,4 +390,39 @@ void DisplayManager::drawNowPlayingScreen() {
     }
     u8g2.setCursor(0, 60);
     u8g2.print(player_status_text);
+}
+
+void DisplayManager::drawVolumeScreen() {
+    if (!bluetooth_manager) {
+        u8g2.drawStr(0, 32, "BT Manager not set!");
+        return;
+    }
+
+    // Title
+    u8g2.drawStr(0, 12, "Volume");
+
+    // Get volume and convert to percentage (0-127 -> 0-100%)
+    uint8_t volume = bluetooth_manager->getVolume();
+    int percentage = (volume * 100) / 127;
+
+    // Draw percentage centered
+    char percent_str[8];
+    snprintf(percent_str, sizeof(percent_str), "%d%%", percentage);
+    u8g2_uint_t text_width = u8g2.getStrWidth(percent_str);
+    u8g2.drawStr((SCREEN_WIDTH - text_width) / 2, 50, percent_str);
+
+    // Draw progress bar
+    const int bar_x = 10;
+    const int bar_y = 28;
+    const int bar_width = SCREEN_WIDTH - 20;
+    const int bar_height = 12;
+
+    // Draw bar outline
+    u8g2.drawFrame(bar_x, bar_y, bar_width, bar_height);
+
+    // Draw filled portion
+    int fill_width = (bar_width - 2) * percentage / 100;
+    if (fill_width > 0) {
+        u8g2.drawBox(bar_x + 1, bar_y + 1, fill_width, bar_height - 2);
+    }
 }
