@@ -5,32 +5,29 @@
 #include <SD.h>
 #include <vector>
 
+#define PLAYLIST_INDEX_FILE "/playlist.idx"
+
 class PlaylistManager {
 private:
-    std::vector<String> playlist;
     String music_root;
-    
+    size_t track_count;
+    std::vector<uint32_t> file_offsets;  // Only offsets, not strings!
+
 public:
     PlaylistManager(const String& root = "/");
-    
-    // Playlist management
-    bool scanForMP3Files();
-    void clearPlaylist();
-    void sortPlaylist();
-    
-    // Data access
-    size_t getTrackCount() const { return playlist.size(); }
-    String getTrackPath(int index) const;
+
+    bool scanForMP3Files();      // Scan and create index file
+    bool loadIndex();            // Load offsets from existing file
+
+    size_t getTrackCount() const { return track_count; }
+    String getTrackPath(int index) const;   // Read from file on-demand
     String getTrackName(int index) const;
-    const std::vector<String>& getPlaylist() const { return playlist; }
-    
-    // Utilities
     bool isValidIndex(int index) const;
-    void printPlaylist(int current_index = -1) const;
-    
+
 private:
     bool hasMP3Extension(const String& filename);
-    void scanDirectory(File dir, const String& path = "");
+    void scanDirectory(File dir, File& indexFile, const String& path);
+    void buildOffsetTable();
 };
 
 #endif

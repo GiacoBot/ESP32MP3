@@ -253,12 +253,11 @@ void DisplayManager::drawPlaylistMenu() {
 
     u8g2.drawStr(0, 12, "Playlist");
 
-    const auto& tracks = playlist_manager->getPlaylist();
-    if (tracks.empty()) {
+    const int list_size = playlist_manager->getTrackCount();
+    if (list_size == 0) {
         u8g2.drawStr(0, 32, "No tracks on SD card.");
     } else {
         const int max_items_on_screen = 4;
-        const int list_size = tracks.size();
 
         // Determine available width based on whether the scrollbar will be drawn
         int available_width = (list_size > max_items_on_screen) ? SCREEN_WIDTH - 4 : SCREEN_WIDTH;
