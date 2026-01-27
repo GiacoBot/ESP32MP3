@@ -19,6 +19,7 @@ DisplayManager::DisplayManager() :
     playlist_last_selection_time(0),
     playlist_last_scroll_time(0),
     playlist_text_scroll_offset_pixels(0),
+    playlist_cache_start_index(-1),
     last_displayed_track(""),
     last_bt_status(false),
     last_player_state(PlayerState::STOPPED)
@@ -82,6 +83,22 @@ void DisplayManager::setPlaylistMenuState(int selected_index, int scroll_offset)
 
     playlist_menu_selected_index = selected_index;
     // The incoming scroll_offset is ignored, as we will calculate it internally.
+}
+
+// --- Cache Methods ---
+void DisplayManager::updatePlaylistCache(int start_index) {
+    if (!playlist_manager) return;
+
+    int list_size = playlist_manager->getTrackCount();
+    for (int i = 0; i < PLAYLIST_VISIBLE_ITEMS; i++) {
+        int track_index = start_index + i;
+        if (track_index < list_size) {
+            playlist_cached_names[i] = playlist_manager->getTrackName(track_index);
+        } else {
+            playlist_cached_names[i] = "";
+        }
+    }
+    playlist_cache_start_index = start_index;
 }
 
 // --- Core Update Method ---
@@ -279,6 +296,11 @@ void DisplayManager::drawPlaylistMenu() {
             playlist_menu_scroll_offset = 0;
         }
 
+        // Update cache only when scroll position changes
+        if (playlist_cache_start_index != playlist_menu_scroll_offset) {
+            updatePlaylistCache(playlist_menu_scroll_offset);
+        }
+
         int y = 29; // Starting Y for the list
         const int line_height = 11;
 
@@ -288,8 +310,10 @@ void DisplayManager::drawPlaylistMenu() {
                 break;
             }
 
-            String track_name = playlist_manager->getTrackName(item_index);
-            
+            // Use cached track name instead of reading from SD card every frame
+            int cache_index = item_index - playlist_menu_scroll_offset;
+            String& track_name = playlist_cached_names[cache_index];
+
             if (item_index == playlist_menu_selected_index) {
                 // --- Horizontal Scrolling Logic for Selected Item ---
                 u8g2_uint_t text_width = u8g2.getStrWidth(track_name.c_str());

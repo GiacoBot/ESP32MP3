@@ -55,11 +55,19 @@ private:
     unsigned long playlist_last_scroll_time;
     int playlist_text_scroll_offset_pixels;
 
+    // Track name cache for playlist menu
+    static const int PLAYLIST_VISIBLE_ITEMS = 4;
+    String playlist_cached_names[PLAYLIST_VISIBLE_ITEMS];
+    int playlist_cache_start_index;  // -1 = cache invalid
+
     // --- Drawing Methods ---
     void drawBluetoothMenu();
     void drawPlaylistMenu();
     void drawNowPlayingScreen();
     void drawVolumeScreen();
+
+    // --- Cache Methods ---
+    void updatePlaylistCache(int start_index);
 
     // --- "Now Playing" screen state tracking ---
     String last_displayed_track;
