@@ -89,15 +89,8 @@ void DisplayManager::setPlaylistMenuState(int selected_index, int scroll_offset)
 void DisplayManager::updatePlaylistCache(int start_index) {
     if (!playlist_manager) return;
 
-    int list_size = playlist_manager->getTrackCount();
-    for (int i = 0; i < PLAYLIST_VISIBLE_ITEMS; i++) {
-        int track_index = start_index + i;
-        if (track_index < list_size) {
-            playlist_cached_names[i] = playlist_manager->getTrackName(track_index);
-        } else {
-            playlist_cached_names[i] = "";
-        }
-    }
+    // Usa batch read: una sola apertura file per tutti i nomi
+    playlist_manager->getTrackNames(start_index, PLAYLIST_VISIBLE_ITEMS, playlist_cached_names);
     playlist_cache_start_index = start_index;
 }
 

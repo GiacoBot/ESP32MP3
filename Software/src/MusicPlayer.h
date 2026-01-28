@@ -29,6 +29,7 @@ class MusicPlayer {
 private:
     PlayerState current_state;
     int current_track_index;
+    String current_track_name;  // Cache del nome traccia corrente
     std::vector<StateChangeCallback> state_callbacks;
     std::vector<LogCallback> log_callbacks;
     volatile bool is_busy; // Concurrency flag
