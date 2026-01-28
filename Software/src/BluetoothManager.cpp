@@ -118,12 +118,6 @@ void BluetoothManager::setVolume(uint8_t volume) {
     if (volume > 127) volume = 127;
     _cached_volume = volume;
     a2dp_source.set_volume(volume);
-
-    // Send volume to headphones via AVRCP
-    if (connected) {
-        esp_avrc_ct_send_set_absolute_volume_cmd(0, volume);
-    }
-
     Serial.printf("Volume set to: %d (%d%%)\n", volume, (volume * 100) / 127);
 }
 
