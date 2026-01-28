@@ -1,7 +1,6 @@
 #include "BluetoothManager.h"
 #include "MusicPlayer.h"
 #include "AudioProcessor.h"
-#include "esp_avrc_api.h"
 
 // Static variable for callbacks
 BluetoothManager* BluetoothManager::instance = nullptr;
@@ -59,9 +58,7 @@ void BluetoothManager::startDiscovery() {
 void BluetoothManager::stopDiscovery() {
     if (discovering) {
         Serial.println("Stopping Bluetooth device discovery...");
-        if (esp_bt_gap_cancel_discovery() != ESP_OK) {
-            Serial.println("Failed to cancel discovery");
-        }
+        a2dp_source.cancel_discovery();
     }
 }
 
