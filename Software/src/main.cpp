@@ -82,7 +82,7 @@ void loop() {
                         current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = AppScreen::SCREEN_VOLUME_CONTROL;
                         break;
                     default: break;
                 }
@@ -101,7 +101,7 @@ void loop() {
                         current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = AppScreen::SCREEN_VOLUME_CONTROL;
                         break;
                     default: break;
                 }
@@ -128,7 +128,7 @@ void loop() {
                         current_screen = AppScreen::SCREEN_TRACK_SELECTION;
                         break;
                     case InputEvent::INPUT_EVENT_LEFT:
-                        current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                        current_screen = AppScreen::SCREEN_VOLUME_CONTROL;
                         break;
                     case InputEvent::INPUT_EVENT_ENTER:
                         if (device_count > 0 && bt_menu_selected < device_count) {
@@ -193,7 +193,7 @@ void loop() {
                     music_player.executeCommand(PlayerCommand::NEXT_TRACK);
                     break;
                 case InputEvent::INPUT_EVENT_RIGHT:
-                    current_screen = AppScreen::SCREEN_BLUETOOTH_SELECTION;
+                    current_screen = AppScreen::SCREEN_VOLUME_CONTROL;
                     break;
                 case InputEvent::INPUT_EVENT_LEFT:
                     current_screen = AppScreen::SCREEN_TRACK_SELECTION;
@@ -210,6 +210,32 @@ void loop() {
             }
             break;
         }
+
+        case AppScreen::SCREEN_VOLUME_CONTROL: {
+            switch (event) {
+                case InputEvent::INPUT_EVENT_UP:
+                case InputEvent::INPUT_EVENT_UP_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_UP_REPEAT:
+                    bluetooth_manager.volumeUp();
+                    break;
+                case InputEvent::INPUT_EVENT_DOWN:
+                case InputEvent::INPUT_EVENT_DOWN_LONG_PRESS:
+                case InputEvent::INPUT_EVENT_DOWN_REPEAT:
+                    bluetooth_manager.volumeDown();
+                    break;
+                case InputEvent::INPUT_EVENT_RIGHT:
+                    current_screen = AppScreen::SCREEN_BLUETOOTH_SELECTION;
+                    break;
+                case InputEvent::INPUT_EVENT_LEFT:
+                    current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                    break;
+                case InputEvent::INPUT_EVENT_ENTER:
+                    current_screen = AppScreen::SCREEN_NOW_PLAYING;
+                    break;
+                default: break;
+            }
+            break;
+        }
     }
 
     // Check for Bluetooth connection event to trigger screen transition
@@ -218,6 +244,12 @@ void loop() {
             current_screen = AppScreen::SCREEN_NOW_PLAYING;
         }
         bluetooth_manager.consumeConnectionEvent();
+    }
+
+    // Poll for remote volume changes (from headphones/speaker)
+    if (bluetooth_manager.hasVolumeChanged()) {
+        bluetooth_manager.consumeVolumeChangeEvent();
+        // Display will automatically update with new volume on next update()
     }
 
     display_manager.update(current_screen);

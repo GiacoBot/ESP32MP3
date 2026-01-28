@@ -3,7 +3,7 @@
 A self-built, portable MP3 player based on ESP32, combining a custom hardware design with an intuitive software interface. It reads music from an SD card, streams audio to any Bluetooth audio device, and is controlled via an OLED display and physical buttons.
 
 <p align="center">
-<img src="images/front_back_rev1.1.png" alt="Project Photo" width="50%">
+<img src="images/front_back_rev1.1.png" alt="Project Photo" width="75%">
 </p>
 
 ## **Introduction**
@@ -29,7 +29,7 @@ The result is a functional and integrated device, demonstrating expertise in bot
     *   **Bluetooth Device Selection**: Scans for nearby audio devices and manages the connection.
     *   **Track Selection**: Allows browsing the complete playlist of songs on the SD Card.
     *   **Now Playing**: Displays track information (if available), song title, artist, and a progress bar.
-    *   **Volume Control**: (WIP, coming soon) Adjusts the playback volume directly from the interface.
+    *   **Volume Control**: Adjusts the playback volume directly from the interface.
 *   **Advanced Playlist Management**: Automatically scans the SD card on startup to find all `.mp3` files.
 *   **Intuitive User Input**: Supports short press, long press, and auto-repeat of buttons for smooth and fast navigation.
 *   **Modular Firmware Architecture**: The code is organized into specialized "Managers" (Display, Input, Bluetooth, Player), making the system scalable, maintainable, and easy to debug.

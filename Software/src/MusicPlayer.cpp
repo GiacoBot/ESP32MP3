@@ -1,14 +1,17 @@
 #include "MusicPlayer.h"
 #include "PlaylistManager.h"
 #include "AudioProcessor.h"
+#include "BluetoothManager.h"
 
 // Global objects defined in main.cpp
 extern PlaylistManager playlist_manager;
 extern AudioProcessor audio_processor;
+extern BluetoothManager bluetooth_manager;
 
-MusicPlayer::MusicPlayer() : 
+MusicPlayer::MusicPlayer() :
     current_state(PlayerState::STOPPED),
     current_track_index(-1),
+    current_track_name("None"),
     is_busy(false) {
 }
 
@@ -68,8 +71,10 @@ bool MusicPlayer::executeCommand(PlayerCommand cmd, int parameter) {
             return false;
             
         case PlayerCommand::VOLUME_UP:
+            bluetooth_manager.volumeUp();
+            return true;
         case PlayerCommand::VOLUME_DOWN:
-            // To be implemented
+            bluetooth_manager.volumeDown();
             return true;
     }
     return false;
@@ -96,20 +101,21 @@ bool MusicPlayer::openTrack(int index) {
         setBusy(false);
         return false;
     }
-    
+
     String track_path = playlist_manager.getTrackPath(index);
     if (!audio_processor.openFile(track_path)) {
         logMessage("Failed to open: " + track_path);
         setBusy(false);
         return false;
     }
-    
+
     current_track_index = index;
+    current_track_name = playlist_manager.getTrackName(index);  // Cache nome
     current_state = PlayerState::PLAYING;
-    
-    logMessage("Playing: " + playlist_manager.getTrackName(index));
+
+    logMessage("Playing: " + current_track_name);
     notifyStateChange();
-    
+
     setBusy(false);
     return true;
 }
@@ -154,8 +160,5 @@ int MusicPlayer::getTrackCount() const {
 }
 
 String MusicPlayer::getCurrentTrackName() const {
-    if (current_track_index >= 0) {
-        return playlist_manager.getTrackName(current_track_index);
-    }
-    return "None";
+    return current_track_name;  // Ritorna cache, nessuna lettura SD
 }

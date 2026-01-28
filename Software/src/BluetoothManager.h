@@ -36,7 +36,15 @@ public:
     String getConnectingDeviceName() const;
     bool hasConnectionEvent() const;
     void consumeConnectionEvent();
-    
+
+    // --- Volume Control ---
+    void setVolume(uint8_t volume);
+    uint8_t getVolume() const;
+    void volumeUp(uint8_t step = 10);
+    void volumeDown(uint8_t step = 10);
+    bool hasVolumeChanged();
+    void consumeVolumeChangeEvent();
+
     // --- Static Callbacks (for A2DP Library hooks) ---
     // Callback for A2DP audio data
     static int32_t audioDataCallback(uint8_t* data, int32_t len);
@@ -58,6 +66,11 @@ private:
     BluetoothDevice connected_device;
     BluetoothDevice connecting_device; // Temporarily store device info during connection attempt
     bool _connection_event_pending;
+
+    // --- Volume State ---
+    uint8_t _cached_volume;
+    uint8_t _last_polled_volume;
+    bool _volume_change_pending;
 
     std::vector<BluetoothDevice> discovered_devices;
     

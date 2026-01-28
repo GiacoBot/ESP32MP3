@@ -1,6 +1,7 @@
 #include "BluetoothManager.h"
 #include "MusicPlayer.h"
 #include "AudioProcessor.h"
+#include "esp_avrc_api.h"
 
 // Static variable for callbacks
 BluetoothManager* BluetoothManager::instance = nullptr;
@@ -13,7 +14,10 @@ BluetoothManager::BluetoothManager() :
     connected(false),
     discovering(false),
     connecting(false),
-    _connection_event_pending(false) { // Initialize the new flag
+    _connection_event_pending(false),
+    _cached_volume(64),      // Default to ~50% (64/127)
+    _last_polled_volume(64),
+    _volume_change_pending(false) {
     instance = this; // For static callbacks
     memset(&connected_device, 0, sizeof(BluetoothDevice));
     memset(&connecting_device, 0, sizeof(BluetoothDevice));
@@ -111,6 +115,59 @@ void BluetoothManager::consumeConnectionEvent() {
     _connection_event_pending = false;
 }
 
+// --- Volume Control ---
+
+void BluetoothManager::setVolume(uint8_t volume) {
+    if (volume > 127) volume = 127;
+    _cached_volume = volume;
+    a2dp_source.set_volume(volume);
+
+    // Send volume to headphones via AVRCP
+    if (connected) {
+        esp_avrc_ct_send_set_absolute_volume_cmd(0, volume);
+    }
+
+    Serial.printf("Volume set to: %d (%d%%)\n", volume, (volume * 100) / 127);
+}
+
+uint8_t BluetoothManager::getVolume() const {
+    return _cached_volume;
+}
+
+void BluetoothManager::volumeUp(uint8_t step) {
+    int new_volume = _cached_volume + step;
+    if (new_volume > 127) new_volume = 127;
+    setVolume((uint8_t)new_volume);
+}
+
+void BluetoothManager::volumeDown(uint8_t step) {
+    int new_volume = _cached_volume - step;
+    if (new_volume < 0) new_volume = 0;
+    setVolume((uint8_t)new_volume);
+}
+
+bool BluetoothManager::hasVolumeChanged() {
+    // Only poll volume when connected, otherwise get_volume() returns 0
+    if (!connected) {
+        return _volume_change_pending;
+    }
+
+    uint8_t current_volume = a2dp_source.get_volume();
+    if (current_volume != _last_polled_volume) {
+        _last_polled_volume = current_volume;
+        if (current_volume != _cached_volume) {
+            _cached_volume = current_volume;
+            _volume_change_pending = true;
+            Serial.printf("Remote volume change detected: %d (%d%%)\n", current_volume, (current_volume * 100) / 127);
+        }
+    }
+    return _volume_change_pending;
+}
+
+void BluetoothManager::consumeVolumeChangeEvent() {
+    _volume_change_pending = false;
+}
+
 // --- Library Callback Implementations ---
 
 bool BluetoothManager::ssid_callback(const char* ssid, esp_bd_addr_t address, int rssi) {
@@ -168,6 +225,7 @@ void BluetoothManager::connectionStateCallback(esp_a2d_connection_state_t state,
             instance->connecting = false;
             instance->connected_device = instance->connecting_device;
             Serial.printf("Stored connected device: %s\n", instance->connected_device.name.c_str());
+            instance->setVolume(instance->_cached_volume); // Set initial volume to 50%
             if (instance->music_player) instance->music_player->notifyConnectionStateChanged(true);
             instance->_connection_event_pending = true; // Signal the event
             break;

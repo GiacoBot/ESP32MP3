@@ -19,6 +19,7 @@ DisplayManager::DisplayManager() :
     playlist_last_selection_time(0),
     playlist_last_scroll_time(0),
     playlist_text_scroll_offset_pixels(0),
+    playlist_cache_start_index(-1),
     last_displayed_track(""),
     last_bt_status(false),
     last_player_state(PlayerState::STOPPED)
@@ -84,6 +85,15 @@ void DisplayManager::setPlaylistMenuState(int selected_index, int scroll_offset)
     // The incoming scroll_offset is ignored, as we will calculate it internally.
 }
 
+// --- Cache Methods ---
+void DisplayManager::updatePlaylistCache(int start_index) {
+    if (!playlist_manager) return;
+
+    // Usa batch read: una sola apertura file per tutti i nomi
+    playlist_manager->getTrackNames(start_index, PLAYLIST_VISIBLE_ITEMS, playlist_cached_names);
+    playlist_cache_start_index = start_index;
+}
+
 // --- Core Update Method ---
 void DisplayManager::update(AppScreen current_screen) {
     if (!is_initialized) return;
@@ -100,6 +110,9 @@ void DisplayManager::update(AppScreen current_screen) {
             break;
         case AppScreen::SCREEN_NOW_PLAYING:
             drawNowPlayingScreen();
+            break;
+        case AppScreen::SCREEN_VOLUME_CONTROL:
+            drawVolumeScreen();
             break;
     }
 
@@ -250,12 +263,11 @@ void DisplayManager::drawPlaylistMenu() {
 
     u8g2.drawStr(0, 12, "Playlist");
 
-    const auto& tracks = playlist_manager->getPlaylist();
-    if (tracks.empty()) {
+    const int list_size = playlist_manager->getTrackCount();
+    if (list_size == 0) {
         u8g2.drawStr(0, 32, "No tracks on SD card.");
     } else {
         const int max_items_on_screen = 4;
-        const int list_size = tracks.size();
 
         // Determine available width based on whether the scrollbar will be drawn
         int available_width = (list_size > max_items_on_screen) ? SCREEN_WIDTH - 4 : SCREEN_WIDTH;
@@ -277,6 +289,11 @@ void DisplayManager::drawPlaylistMenu() {
             playlist_menu_scroll_offset = 0;
         }
 
+        // Update cache only when scroll position changes
+        if (playlist_cache_start_index != playlist_menu_scroll_offset) {
+            updatePlaylistCache(playlist_menu_scroll_offset);
+        }
+
         int y = 29; // Starting Y for the list
         const int line_height = 11;
 
@@ -286,8 +303,10 @@ void DisplayManager::drawPlaylistMenu() {
                 break;
             }
 
-            String track_name = playlist_manager->getTrackName(item_index);
-            
+            // Use cached track name instead of reading from SD card every frame
+            int cache_index = item_index - playlist_menu_scroll_offset;
+            String& track_name = playlist_cached_names[cache_index];
+
             if (item_index == playlist_menu_selected_index) {
                 // --- Horizontal Scrolling Logic for Selected Item ---
                 u8g2_uint_t text_width = u8g2.getStrWidth(track_name.c_str());
@@ -387,4 +406,39 @@ void DisplayManager::drawNowPlayingScreen() {
     }
     u8g2.setCursor(0, 60);
     u8g2.print(player_status_text);
+}
+
+void DisplayManager::drawVolumeScreen() {
+    if (!bluetooth_manager) {
+        u8g2.drawStr(0, 32, "BT Manager not set!");
+        return;
+    }
+
+    // Title
+    u8g2.drawStr(0, 12, "Volume");
+
+    // Get volume and convert to percentage (0-127 -> 0-100%)
+    uint8_t volume = bluetooth_manager->getVolume();
+    int percentage = (volume * 100) / 127;
+
+    // Draw percentage centered
+    char percent_str[8];
+    snprintf(percent_str, sizeof(percent_str), "%d%%", percentage);
+    u8g2_uint_t text_width = u8g2.getStrWidth(percent_str);
+    u8g2.drawStr((SCREEN_WIDTH - text_width) / 2, 50, percent_str);
+
+    // Draw progress bar
+    const int bar_x = 10;
+    const int bar_y = 28;
+    const int bar_width = SCREEN_WIDTH - 20;
+    const int bar_height = 12;
+
+    // Draw bar outline
+    u8g2.drawFrame(bar_x, bar_y, bar_width, bar_height);
+
+    // Draw filled portion
+    int fill_width = (bar_width - 2) * percentage / 100;
+    if (fill_width > 0) {
+        u8g2.drawBox(bar_x + 1, bar_y + 1, fill_width, bar_height - 2);
+    }
 }
