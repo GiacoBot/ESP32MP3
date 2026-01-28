@@ -1,11 +1,29 @@
 #include "PlaylistManager.h"
 
 PlaylistManager::PlaylistManager(const String& root) :
-    music_root(root), track_count(0) {
+    music_root(root), track_count(0),
+    current_chunk_index(0), tracks_in_current_chunk(0) {
     if (!music_root.endsWith("/")) {
         music_root += "/";
     }
     path_buffer[0] = '\0';
+}
+
+String PlaylistManager::getChunkFilePath(int chunk_index) const {
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%s/all.%04d", PLAYLIST_DIR, chunk_index);
+    return String(buffer);
+}
+
+void PlaylistManager::deleteOldIndexFiles() {
+    // Delete all chunk files
+    int chunk = 0;
+    while (true) {
+        String path = getChunkFilePath(chunk);
+        if (!SD.exists(path.c_str())) break;
+        SD.remove(path.c_str());
+        chunk++;
+    }
 }
 
 bool PlaylistManager::scanForMP3Files() {
@@ -16,34 +34,40 @@ bool PlaylistManager::scanForMP3Files() {
         SD.mkdir(PLAYLIST_DIR);
     }
 
-    // Delete old index if it exists
-    if (SD.exists(PLAYLIST_INDEX_FILE)) {
-        SD.remove(PLAYLIST_INDEX_FILE);
-    }
-
-    File indexFile = SD.open(PLAYLIST_INDEX_FILE, FILE_WRITE);
-    if (!indexFile) {
-        Serial.println("Failed to create index file");
-        return false;
-    }
+    // Delete old index files
+    deleteOldIndexFiles();
 
     File root = SD.open(music_root);
     if (!root || !root.isDirectory()) {
         Serial.println("Failed to open music directory");
-        indexFile.close();
+        return false;
+    }
+
+    // Initialize first chunk file
+    current_chunk_index = 0;
+    tracks_in_current_chunk = 0;
+    current_chunk_file = SD.open(getChunkFilePath(0).c_str(), FILE_WRITE);
+    if (!current_chunk_file) {
+        Serial.println("Failed to create chunk file");
+        root.close();
         return false;
     }
 
     Serial.println("Scanning for MP3 files...");
-    scanDirectory(root, indexFile, 0);
+    scanDirectory(root, 0);
     root.close();
-    indexFile.close();
 
-    Serial.printf("Found %d MP3 files, index created\n", track_count);
+    // Close last chunk file
+    if (current_chunk_file) {
+        current_chunk_file.close();
+    }
+
+    Serial.printf("Found %d MP3 files, %d chunk files created\n",
+                  track_count, current_chunk_index + 1);
     return track_count > 0;
 }
 
-void PlaylistManager::scanDirectory(File dir, File& indexFile, size_t base_len) {
+void PlaylistManager::scanDirectory(File dir, size_t base_len) {
     while (true) {
         File entry = dir.openNextFile();
         if (!entry) break;
@@ -73,11 +97,21 @@ void PlaylistManager::scanDirectory(File dir, File& indexFile, size_t base_len) 
         }
 
         if (entry.isDirectory()) {
-            scanDirectory(entry, indexFile, new_len);
+            scanDirectory(entry, new_len);
         } else if (hasMP3Extension(entry_name)) {
-            indexFile.print(music_root);
-            indexFile.println(path_buffer);
+            // Write track path to current chunk
+            current_chunk_file.print(music_root);
+            current_chunk_file.println(path_buffer);
             track_count++;
+            tracks_in_current_chunk++;
+
+            // Rotate to new chunk file if current one is full
+            if (tracks_in_current_chunk >= PLAYLIST_CHUNK_SIZE) {
+                current_chunk_file.close();
+                current_chunk_index++;
+                current_chunk_file = SD.open(getChunkFilePath(current_chunk_index).c_str(), FILE_WRITE);
+                tracks_in_current_chunk = 0;
+            }
         }
         entry.close();
     }
@@ -86,52 +120,54 @@ void PlaylistManager::scanDirectory(File dir, File& indexFile, size_t base_len) 
 bool PlaylistManager::loadIndex() {
     track_count = 0;
 
-    if (!SD.exists(PLAYLIST_INDEX_FILE)) {
-        Serial.println("Index file not found, scanning...");
+    // Count tracks from all chunk files
+    int chunk_index = 0;
+    while (true) {
+        String chunk_path = getChunkFilePath(chunk_index);
+        if (!SD.exists(chunk_path.c_str())) break;
+
+        // Count lines in this chunk
+        File f = SD.open(chunk_path.c_str(), FILE_READ);
+        if (f) {
+            while (f.available()) {
+                if (f.read() == '\n') track_count++;
+            }
+            f.close();
+        }
+        chunk_index++;
+    }
+
+    if (track_count == 0) {
+        Serial.println("No chunk files found, scanning...");
         return scanForMP3Files();
     }
 
-    // Count lines in index file
-    File indexFile = SD.open(PLAYLIST_INDEX_FILE, FILE_READ);
-    if (!indexFile) {
-        Serial.println("Failed to open index file");
-        return false;
-    }
-
-    while (indexFile.available()) {
-        char c = indexFile.read();
-        if (c == '\n') {
-            track_count++;
-        }
-    }
-    indexFile.close();
-
-    Serial.printf("Index loaded: %d tracks\n", track_count);
-    return track_count > 0;
+    Serial.printf("Index loaded: %d tracks from %d chunks\n", track_count, chunk_index);
+    return true;
 }
 
 String PlaylistManager::getTrackPath(int index) const {
     if (!isValidIndex(index)) return "";
 
-    File indexFile = SD.open(PLAYLIST_INDEX_FILE, FILE_READ);
-    if (!indexFile) return "";
+    int chunk = getChunkIndex(index);
+    int local = getLocalIndex(index);
 
-    // Skip 'index' lines
-    int current_line = 0;
-    while (current_line < index && indexFile.available()) {
-        if (indexFile.read() == '\n') {
-            current_line++;
-        }
+    File f = SD.open(getChunkFilePath(chunk).c_str(), FILE_READ);
+    if (!f) return "";
+
+    // Skip only 'local' lines (not 'index' lines!)
+    int line = 0;
+    while (line < local && f.available()) {
+        if (f.read() == '\n') line++;
     }
 
-    if (current_line != index) {
-        indexFile.close();
+    if (line != local) {
+        f.close();
         return "";
     }
 
-    // Read current line
-    String path = indexFile.readStringUntil('\n');
-    indexFile.close();
+    String path = f.readStringUntil('\n');
+    f.close();
 
     path.trim();
     return path;
@@ -140,32 +176,33 @@ String PlaylistManager::getTrackPath(int index) const {
 String PlaylistManager::getTrackName(int index) const {
     if (!isValidIndex(index)) return "Invalid";
 
-    File indexFile = SD.open(PLAYLIST_INDEX_FILE, FILE_READ);
-    if (!indexFile) return "Invalid";
+    int chunk = getChunkIndex(index);
+    int local = getLocalIndex(index);
 
-    // Skip 'index' lines
-    int current_line = 0;
-    while (current_line < index && indexFile.available()) {
-        if (indexFile.read() == '\n') {
-            current_line++;
-        }
+    File f = SD.open(getChunkFilePath(chunk).c_str(), FILE_READ);
+    if (!f) return "Invalid";
+
+    // Skip only 'local' lines
+    int line = 0;
+    while (line < local && f.available()) {
+        if (f.read() == '\n') line++;
     }
 
-    if (current_line != index) {
-        indexFile.close();
+    if (line != local) {
+        f.close();
         return "Invalid";
     }
 
     // Read path into char buffer
     char buffer[256];
     size_t len = 0;
-    while (indexFile.available() && len < sizeof(buffer) - 1) {
-        char c = indexFile.read();
+    while (f.available() && len < sizeof(buffer) - 1) {
+        char c = f.read();
         if (c == '\n' || c == '\r') break;
         buffer[len++] = c;
     }
     buffer[len] = '\0';
-    indexFile.close();
+    f.close();
 
     // Find last slash
     const char* name_start = strrchr(buffer, '/');
@@ -188,7 +225,7 @@ bool PlaylistManager::isValidIndex(int index) const {
 }
 
 void PlaylistManager::getTrackNames(int start_index, int count, String* output) const {
-    // Inizializza output
+    // Initialize output
     for (int i = 0; i < count; i++) {
         output[i] = "";
     }
@@ -197,36 +234,42 @@ void PlaylistManager::getTrackNames(int start_index, int count, String* output) 
         return;
     }
 
-    File indexFile = SD.open(PLAYLIST_INDEX_FILE, FILE_READ);
-    if (!indexFile) return;
+    int current_chunk = getChunkIndex(start_index);
+    int local_index = getLocalIndex(start_index);
 
-    // Salta a start_index (una sola volta)
-    int current_line = 0;
-    while (current_line < start_index && indexFile.available()) {
-        if (indexFile.read() == '\n') {
-            current_line++;
-        }
+    File f = SD.open(getChunkFilePath(current_chunk).c_str(), FILE_READ);
+    if (!f) return;
+
+    // Skip to local_index within the chunk
+    int line = 0;
+    while (line < local_index && f.available()) {
+        if (f.read() == '\n') line++;
     }
 
-    if (current_line != start_index) {
-        indexFile.close();
-        return;
-    }
-
-    // Legge count nomi consecutivi
+    // Read count names
     char buffer[256];
-    for (int i = 0; i < count && indexFile.available(); i++) {
-        int track_index = start_index + i;
-        if (track_index >= (int)track_count) break;
+    for (int i = 0; i < count; i++) {
+        int track_idx = start_index + i;
+        if (track_idx >= (int)track_count) break;
 
-        // Legge linea nel buffer
+        // Check if we need to switch to next chunk
+        int needed_chunk = getChunkIndex(track_idx);
+        if (needed_chunk != current_chunk) {
+            f.close();
+            current_chunk = needed_chunk;
+            f = SD.open(getChunkFilePath(current_chunk).c_str(), FILE_READ);
+            if (!f) break;
+            // At beginning of new chunk, no lines to skip
+        }
+
+        // Read line into buffer
         size_t len = 0;
-        while (indexFile.available() && len < sizeof(buffer) - 1) {
-            char c = indexFile.read();
+        while (f.available() && len < sizeof(buffer) - 1) {
+            char c = f.read();
             if (c == '\n' || c == '\r') {
-                if (c == '\r' && indexFile.available()) {
-                    char next = indexFile.peek();
-                    if (next == '\n') indexFile.read();
+                if (c == '\r' && f.available()) {
+                    char next = f.peek();
+                    if (next == '\n') f.read();
                 }
                 break;
             }
@@ -234,7 +277,7 @@ void PlaylistManager::getTrackNames(int start_index, int count, String* output) 
         }
         buffer[len] = '\0';
 
-        // Estrae nome file (dopo ultimo /)
+        // Extract filename (after last /)
         const char* name_start = strrchr(buffer, '/');
         if (name_start) {
             name_start++;
@@ -242,14 +285,14 @@ void PlaylistManager::getTrackNames(int start_index, int count, String* output) 
             name_start = buffer;
         }
 
-        // Rimuove estensione
+        // Remove extension
         const char* dot = strrchr(name_start, '.');
         size_t name_len = dot ? (dot - name_start) : strlen(name_start);
 
         output[i] = String(name_start).substring(0, name_len);
     }
 
-    indexFile.close();
+    f.close();
 }
 
 bool PlaylistManager::hasMP3Extension(const char* filename) {
