@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <vector>
+#include "TrackMetadata.h"
 
 enum class PlayerState {
     STOPPED,
@@ -30,10 +31,14 @@ private:
     PlayerState current_state;
     int current_track_index;
     String current_track_name;  // Cache del nome traccia corrente
+    TrackMetadata current_metadata;  // ID3 metadata for current track
     std::vector<StateChangeCallback> state_callbacks;
     std::vector<LogCallback> log_callbacks;
     volatile bool is_busy; // Concurrency flag
-    
+
+    // ID3 metadata extraction
+    void extractMetadata(const String& filepath);
+
 public:
     MusicPlayer();
     
@@ -49,6 +54,7 @@ public:
     int getCurrentTrackIndex() const { return current_track_index; }
     int getTrackCount() const;
     String getCurrentTrackName() const;
+    const TrackMetadata& getCurrentMetadata() const { return current_metadata; }
     bool isBusy() const { return is_busy; }
     
     // For internal use (calls from A2DP callbacks)

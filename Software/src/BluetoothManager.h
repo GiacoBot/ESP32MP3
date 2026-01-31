@@ -45,6 +45,10 @@ public:
     bool hasVolumeChanged();
     void consumeVolumeChangeEvent();
 
+    // --- Playback Position Tracking ---
+    void resetPlaybackPosition();       // Call when track changes
+    uint32_t getPlaybackSeconds() const; // Get elapsed playback time from PCM bytes sent
+
     // --- Static Callbacks (for A2DP Library hooks) ---
     // Callback for A2DP audio data
     static int32_t audioDataCallback(uint8_t* data, int32_t len);
@@ -71,6 +75,10 @@ private:
     uint8_t _cached_volume;
     uint8_t _last_polled_volume;
     bool _volume_change_pending;
+
+    // --- Playback Position Tracking ---
+    uint64_t pcm_bytes_sent;            // Total PCM bytes sent via A2DP
+    static const uint32_t SAMPLE_RATE = 44100;  // Standard A2DP sample rate
 
     std::vector<BluetoothDevice> discovered_devices;
     

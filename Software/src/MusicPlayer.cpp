@@ -2,17 +2,51 @@
 #include "PlaylistManager.h"
 #include "AudioProcessor.h"
 #include "BluetoothManager.h"
+#include <SD.h>
+#include "AudioTools/CoreAudio/AudioMetaData/MetaDataID3.h"
 
 // Global objects defined in main.cpp
 extern PlaylistManager playlist_manager;
 extern AudioProcessor audio_processor;
 extern BluetoothManager bluetooth_manager;
 
+// Static pointer for metadata callback context
+static TrackMetadata* s_metadata_ptr = nullptr;
+
+// Callback for ID3 metadata parsing
+static void id3Callback(audio_tools::MetaDataType type, const char* str, int len) {
+    if (s_metadata_ptr == nullptr || str == nullptr || len <= 0) return;
+
+    // Create null-terminated copy
+    char buffer[65];
+    int copy_len = (len < 64) ? len : 64;
+    memcpy(buffer, str, copy_len);
+    buffer[copy_len] = '\0';
+
+    switch (type) {
+        case audio_tools::Title:
+            s_metadata_ptr->setTitle(buffer);
+            s_metadata_ptr->has_metadata = true;
+            break;
+        case audio_tools::Artist:
+            s_metadata_ptr->setArtist(buffer);
+            s_metadata_ptr->has_metadata = true;
+            break;
+        case audio_tools::Album:
+            s_metadata_ptr->setAlbum(buffer);
+            s_metadata_ptr->has_metadata = true;
+            break;
+        default:
+            break;
+    }
+}
+
 MusicPlayer::MusicPlayer() :
     current_state(PlayerState::STOPPED),
     current_track_index(-1),
     current_track_name("None"),
     is_busy(false) {
+    current_metadata.clear();
 }
 
 void MusicPlayer::addStateChangeCallback(StateChangeCallback callback) {
@@ -94,6 +128,50 @@ void MusicPlayer::prevTrack() {
     openTrack(prev_index);
 }
 
+void MusicPlayer::extractMetadata(const String& filepath) {
+    current_metadata.clear();
+
+    File file = SD.open(filepath);
+    if (!file) {
+        return;
+    }
+
+    // Read first 4KB for ID3 tags (ID3v2 is at beginning of file)
+    const size_t BUFFER_SIZE = 4096;
+    uint8_t buffer[BUFFER_SIZE];
+    size_t bytes_read = file.read(buffer, BUFFER_SIZE);
+    file.close();
+
+    if (bytes_read == 0) {
+        return;
+    }
+
+    // Set up static pointer for callback
+    s_metadata_ptr = &current_metadata;
+
+    // Parse ID3 tags
+    audio_tools::MetaDataID3 id3;
+    id3.setCallback(id3Callback);
+    id3.begin();
+    id3.write(buffer, bytes_read);
+    id3.end();
+
+    // Clear static pointer
+    s_metadata_ptr = nullptr;
+
+    // If no title found, use filename as fallback
+    if (current_metadata.title[0] == '\0') {
+        // Extract filename from path
+        int last_slash = filepath.lastIndexOf('/');
+        String filename = (last_slash >= 0) ? filepath.substring(last_slash + 1) : filepath;
+        // Remove .mp3 extension if present
+        if (filename.endsWith(".mp3") || filename.endsWith(".MP3")) {
+            filename = filename.substring(0, filename.length() - 4);
+        }
+        current_metadata.setTitle(filename.c_str());
+    }
+}
+
 bool MusicPlayer::openTrack(int index) {
     setBusy(true);
 
@@ -103,11 +181,18 @@ bool MusicPlayer::openTrack(int index) {
     }
 
     String track_path = playlist_manager.getTrackPath(index);
+
+    // Extract ID3 metadata before opening for audio
+    extractMetadata(track_path);
+
     if (!audio_processor.openFile(track_path)) {
         logMessage("Failed to open: " + track_path);
         setBusy(false);
         return false;
     }
+
+    // Reset playback position counter for new track
+    bluetooth_manager.resetPlaybackPosition();
 
     current_track_index = index;
     current_track_name = playlist_manager.getTrackName(index);  // Cache nome

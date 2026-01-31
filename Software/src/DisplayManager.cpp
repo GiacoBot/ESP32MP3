@@ -1,11 +1,12 @@
 #include "DisplayManager.h"
 #include "settings.h"
 
-DisplayManager::DisplayManager() : 
+DisplayManager::DisplayManager() :
     u8g2(U8G2_CONSTRUCTOR_ARGS),
     music_player(nullptr),
     bluetooth_manager(nullptr),
     playlist_manager(nullptr),
+    audio_processor(nullptr),
     is_initialized(false),
     bt_menu_selected_index(0),
     bt_menu_scroll_offset(0),
@@ -22,7 +23,8 @@ DisplayManager::DisplayManager() :
     playlist_cache_start_index(-1),
     last_displayed_track(""),
     last_bt_status(false),
-    last_player_state(PlayerState::STOPPED)
+    last_player_state(PlayerState::STOPPED),
+    last_np_title("")
     {}
 
 bool DisplayManager::initialize() {
@@ -56,6 +58,10 @@ void DisplayManager::setBluetoothManager(BluetoothManager* btManager) {
 
 void DisplayManager::setPlaylistManager(PlaylistManager* plManager) {
     playlist_manager = plManager;
+}
+
+void DisplayManager::setAudioProcessor(AudioProcessor* processor) {
+    audio_processor = processor;
 }
 
 // --- Setters for UI State ---
@@ -364,48 +370,150 @@ void DisplayManager::drawPlaylistMenu() {
     }
 }
 
+void DisplayManager::drawPlayStateIcon(int x, int y, PlayerState state) {
+    // Use U8g2 built-in icons from open_iconic_play font
+    u8g2.setFont(u8g2_font_open_iconic_play_1x_t);
+    switch (state) {
+        case PlayerState::PLAYING:
+            u8g2.drawGlyph(x, y, 0x45);  // Play icon
+            break;
+        case PlayerState::PAUSED:
+            u8g2.drawGlyph(x, y, 0x44);  // Pause icon
+            break;
+        case PlayerState::STOPPED:
+            u8g2.drawGlyph(x, y, 0x4E);  // Stop icon
+            break;
+    }
+    // Restore main font
+    u8g2.setFont(u8g2_font_boutique_bitmap_9x9_t_all);
+}
+
+void DisplayManager::drawBtIcon(int x, int y, bool connected) {
+    if (connected) {
+        u8g2.drawXBMP(x, y, 8, 8, bt_icon_bits);
+    } else {
+        u8g2.drawXBMP(x, y, 8, 8, bt_disconnected_bits);
+    }
+}
+
+void DisplayManager::drawProgressBar(int x, int y, int width, int height, float progress,
+                                      uint32_t position_sec, uint32_t duration_sec) {
+    // Draw progress bar outline
+    u8g2.drawFrame(x, y, width, height);
+
+    // Draw filled portion
+    int fill_width = (int)((width - 2) * progress);
+    if (fill_width > 0) {
+        u8g2.drawBox(x + 1, y + 1, fill_width, height - 2);
+    }
+
+    // Format time strings
+    char time_str[16];
+    int pos_min = position_sec / 60;
+    int pos_sec = position_sec % 60;
+    int dur_min = duration_sec / 60;
+    int dur_sec = duration_sec % 60;
+    snprintf(time_str, sizeof(time_str), "%d:%02d/%d:%02d", pos_min, pos_sec, dur_min, dur_sec);
+
+    // Draw time to the right of progress bar
+    u8g2_uint_t time_width = u8g2.getStrWidth(time_str);
+    u8g2.drawStr(SCREEN_WIDTH - time_width, y + height - 1, time_str);
+}
+
+void DisplayManager::drawScrollingText(int x, int y, int available_width, const char* text,
+                                        TextScroller& scroller) {
+    u8g2_uint_t text_width = u8g2.getStrWidth(text);
+    int scroll_offset = scroller.update(text_width, available_width);
+
+    // Set clipping window to prevent text overflow
+    u8g2.setClipWindow(x, y - 11, x + available_width, y + 2);
+    u8g2.drawStr(x - scroll_offset, y, text);
+    u8g2.setMaxClipWindow();
+}
+
 void DisplayManager::drawNowPlayingScreen() {
     if (!music_player || !bluetooth_manager) {
         u8g2.drawStr(0, 32, "Managers not set!");
         return;
     }
 
-    String current_track = music_player->getCurrentTrackName();
     PlayerState player_state = music_player->getState();
-    bool bt_connected = bluetooth_manager->isConnected();
+    const TrackMetadata& metadata = music_player->getCurrentMetadata();
 
-    // If nothing has changed, we don't need to do anything.
-    // This check was removed and is now re-added to prevent flicker,
-    // but the final sendBuffer() call in update() will handle the drawing.
-    if (current_track == last_displayed_track && player_state == last_player_state && bt_connected == last_bt_status) {
-        // We still need to draw the last known state since the buffer was cleared.
-    } else {
-        // Update last known states
-        last_displayed_track = current_track;
-        last_player_state = player_state;
-        last_bt_status = bt_connected;
+    // Check if track changed to reset scrollers
+    const char* current_title = metadata.title;
+    if (last_np_title != current_title) {
+        last_np_title = current_title;
+        np_title_scroller.reset();
+        np_artist_scroller.reset();
+        np_album_scroller.reset();
     }
 
-    // 1. Bluetooth Status (Top-right)
-    String bt_status_text = "BT: ";
-    bt_status_text += (last_bt_status) ? "Connected" : "Not Connected";
-    u8g2_uint_t bt_text_width = u8g2.getStrWidth(bt_status_text.c_str());
-    u8g2.setCursor(SCREEN_WIDTH - bt_text_width, 12);
-    u8g2.print(bt_status_text);
+    // Update state cache
+    last_player_state = player_state;
+
+    // Helper variable
+    int icon_x = 0;
+    const int np_icon_size = 8;
+    const int np_icon_gap = 2;
+    const int np_text_x = 11;
+    const int text_available_width = SCREEN_WIDTH - np_text_x;
+    const int np_header_y = 12;
+    const int np_title_y = 26;
+    const int np_artist_y = 38;
+    const int np_album_y = 50;
+    const int np_progress_y = 57;
+    const int np_progress_height = 6;
+
+    // --- Row 1: Header "Now Playing" ---
+    u8g2.drawStr(0, np_header_y, "Now Playing");
+
+    // --- Row 2: Play state icon + Title ---
     
-    // 2. Track Title
-    u8g2.setCursor(0, 28);
-    u8g2.print((last_displayed_track != "None") ? last_displayed_track : "No track playing");
+    // Draw play state icon (8x8)
+    drawPlayStateIcon(0, np_title_y + np_icon_gap, player_state);
+    icon_x += np_icon_size + np_icon_gap + 1;
 
-    // 3. Player Status (Bottom-left)
-    String player_status_text = "Status: ";
-    switch(last_player_state) {
-        case PlayerState::PLAYING: player_status_text += "Playing"; break;
-        case PlayerState::PAUSED:  player_status_text += "Paused"; break;
-        case PlayerState::STOPPED: player_status_text += "Stopped"; break;
+    // Draw title with scrolling
+    const char* title = (metadata.title[0] != '\0') ? metadata.title : "No track";
+    drawScrollingText(np_text_x, np_title_y, text_available_width, title, np_title_scroller);
+
+    // --- Row 3: Artist ---
+    if (metadata.artist[0] != '\0') {
+        // Draw user icon
+        u8g2.drawXBMP(0, np_artist_y - np_icon_size + np_icon_gap, np_icon_size, np_icon_size, user_icon_bits);
+        // Draw artist with scrolling
+        drawScrollingText(np_text_x, np_artist_y, text_available_width,
+                         metadata.artist, np_artist_scroller);
     }
-    u8g2.setCursor(0, 60);
-    u8g2.print(player_status_text);
+
+    // --- Row 4: Album ---
+    if (metadata.album[0] != '\0') {
+        // Draw album icon
+        u8g2.drawXBMP(0, np_album_y - np_icon_size + np_icon_gap, np_icon_size, np_icon_size, album_icon_bits);
+        // Draw album with scrolling
+        drawScrollingText(np_text_x, np_album_y, text_available_width,
+                         metadata.album, np_album_scroller);
+    }
+
+    // --- Row 5: Progress bar + time (Y=57) ---
+    uint32_t position_sec = bluetooth_manager->getPlaybackSeconds();
+    uint32_t duration_sec = 0;
+    float progress = 0.0f;
+
+    if (audio_processor != nullptr) {
+        duration_sec = audio_processor->getDurationSeconds();
+        if (duration_sec > 0) {
+            progress = (float)position_sec / (float)duration_sec;
+            if (progress > 1.0f) progress = 1.0f;
+        }
+    }
+
+    // Calculate progress bar width (leave space for time display)
+    // Time format: "M:SS/M:SS" ~= 9 chars * 6 pixels = 54 pixels + padding
+    int progress_bar_width = SCREEN_WIDTH - 58;
+    drawProgressBar(0, np_progress_y, progress_bar_width, np_progress_height,
+                    progress, position_sec, duration_sec);
 }
 
 void DisplayManager::drawVolumeScreen() {

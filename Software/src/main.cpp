@@ -41,6 +41,7 @@ void setup() {
     display_manager.setMusicPlayer(&music_player);
     display_manager.setBluetoothManager(&bluetooth_manager);
     display_manager.setPlaylistManager(&playlist_manager);
+    display_manager.setAudioProcessor(&audio_processor);
     
     if (!SD.begin(SD_CS_PIN)) {
         Serial.println("SD card initialization failed!");

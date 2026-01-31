@@ -16,7 +16,8 @@ BluetoothManager::BluetoothManager() :
     _connection_event_pending(false),
     _cached_volume(64),      // Default to ~50% (64/127)
     _last_polled_volume(64),
-    _volume_change_pending(false) {
+    _volume_change_pending(false),
+    pcm_bytes_sent(0) {
     instance = this; // For static callbacks
     memset(&connected_device, 0, sizeof(BluetoothDevice));
     memset(&connecting_device, 0, sizeof(BluetoothDevice));
@@ -159,6 +160,18 @@ void BluetoothManager::consumeVolumeChangeEvent() {
     _volume_change_pending = false;
 }
 
+// --- Playback Position Tracking ---
+
+void BluetoothManager::resetPlaybackPosition() {
+    pcm_bytes_sent = 0;
+}
+
+uint32_t BluetoothManager::getPlaybackSeconds() const {
+    // PCM: 16-bit stereo = 4 bytes per sample
+    // seconds = (pcm_bytes / 4) / sample_rate
+    return (uint32_t)((pcm_bytes_sent / 4) / SAMPLE_RATE);
+}
+
 // --- Library Callback Implementations ---
 
 bool BluetoothManager::ssid_callback(const char* ssid, esp_bd_addr_t address, int rssi) {
@@ -228,14 +241,14 @@ void BluetoothManager::connectionStateCallback(esp_a2d_connection_state_t state,
     }
 }
 
-// --- Unchanged Callbacks ---
+// --- Audio Data Callback ---
 int32_t BluetoothManager::audioDataCallback(uint8_t* data, int32_t len) {
     if (!data || len <= 0) return 0;
     if (!instance || !instance->music_player) {
         memset(data, 0, len);
         return 0;
     }
-    
+
     if (instance->music_player->isBusy()) {
         memset(data, 0, len);
         return len;
@@ -246,14 +259,18 @@ int32_t BluetoothManager::audioDataCallback(uint8_t* data, int32_t len) {
         memset(data, 0, len);
         return len;
     }
-    
+
     int32_t result = audio_processor.readAudioData(data, len);
-    
+
     if (result == 0) {
         if (instance->music_player) instance->music_player->notifyTrackFinished();
         memset(data, 0, len);
         return len;
     }
+
+    // Track PCM bytes sent for playback position
+    instance->pcm_bytes_sent += result;
+
     return result;
 }
 
